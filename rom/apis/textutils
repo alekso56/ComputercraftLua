@@ -70,8 +70,14 @@ end
 function pagedPrint( _sText, _nFreeLines )
 	local nativeScroll = term.scroll
 	term.scroll = makePagedScroll( term, _nFreeLines )
-	local result = print( _sText )
+	local result
+	local ok, err = pcall( function()
+		result = print( _sText )
+	end )
 	term.scroll = nativeScroll
+	if not ok then
+		error( err )
+	end
 	return result
 end
 

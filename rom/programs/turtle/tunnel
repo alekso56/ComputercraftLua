@@ -46,6 +46,18 @@ local function tryDigUp()
 	return true
 end
 
+local function tryDigDown()
+	while turtle.detectDown() do
+		if turtle.digDown() then
+			collect()
+			sleep(0.5)
+		else
+			return false
+		end
+	end
+	return true
+end
+
 local function refuel()
 	local fuelLevel = turtle.getFuelLevel()
 	if fuelLevel == "unlimited" or fuelLevel > 0 then

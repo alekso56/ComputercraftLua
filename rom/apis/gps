@@ -1,6 +1,7 @@
 
-local function trilaterate( A, B, C )
+CHANNEL_GPS = 65534
 
+local function trilaterate( A, B, C )
 	local a2b = B.position - A.position
 	local a2c = C.position - A.position
 		
@@ -32,7 +33,7 @@ local function trilaterate( A, B, C )
 		
 		local rounded1, rounded2 = result1:round(), result2:round()
 		if rounded1.x ~= rounded2.x or rounded1.y ~= rounded2.y or rounded1.z ~= rounded2.z then
-			return result1, result2
+			return rounded1, rounded2
 		else
 			return rounded1
 		end
@@ -58,48 +59,90 @@ function locate( _nTimeout, _bDebug )
 	if _bDebug then
 		print( "Finding position..." )
 	end
-	rednet.broadcast( "PING" )
+
+	-- Find a modem
+	local sModemSide = nil
+	for n,sSide in ipairs( rs.getSides() ) do
+		if peripheral.getType( sSide ) == "modem" then	
+			sModemSide = sSide
+			break
+		end
+	end
+
+	if sModemSide == nil then
+		return nil
+	end
 	
-	local startTime = os.clock()
-	local timeOut = _nTimeout
-	local timeElapsed = 0
+	-- Open a channel
+	local modem = peripheral.wrap( sModemSide )
+	local bCloseChannel = false
+	if not modem.isOpen( os.getComputerID() ) then
+		modem.open( os.getComputerID() )
+		bCloseChannel = true
+	end
 	
+	-- Send a ping to listening GPS hosts
+	modem.transmit( CHANNEL_GPS, os.getComputerID(), "PING" )
+		
+	-- Wait for the responses
 	local tFixes = {}
-	local p1, p2 = nil
-	while timeElapsed < timeOut and (p1 == nil or p2 ~= nil) do
-		local sender, message, distance = rednet.receive( timeOut - timeElapsed )
-		if sender and distance then
-			local result = textutils.unserialize( message )
-			if type(result) == "table" and #result == 3 then
-				local tFix = { id = sender, position = vector.new( result[1], result[2], result[3] ), distance = distance }
-				if _bDebug then
-					print( tFix.distance.." metres from "..tostring( tFix.position ) )
-				end
-				table.insert( tFixes, tFix )
-				
-				if #tFixes >= 3 then
-					if not p1 then
-						p1, p2 = trilaterate( tFixes[1], tFixes[2], tFixes[#tFixes] )
-					else
-						p1, p2 = narrow( p1, p2, tFixes[#tFixes] )
+	local pos1, pos2 = nil
+	local timeout = os.startTimer( _nTimeout or 2 )
+	while true do
+		local e, p1, p2, p3, p4, p5 = os.pullEvent()
+		if e == "modem_message" then
+			-- We received a message from a modem
+			local sSide, sChannel, sReplyChannel, sMessage, nDistance = p1, p2, p3, p4, p5
+			if sSide == sModemSide and sChannel == os.getComputerID() and sReplyChannel == CHANNEL_GPS then
+				-- Received the correct message from the correct modem: use it to determine position
+				local tResult = textutils.unserialize( sMessage )
+				if type(tResult) == "table" and #tResult == 3 then
+					local tFix = { position = vector.new( tResult[1], tResult[2], tResult[3] ), distance = nDistance }
+					if _bDebug then
+						print( tFix.distance.." metres from "..tostring( tFix.position ) )
+					end
+					table.insert( tFixes, tFix )
+					if #tFixes >= 3 then
+						if not pos1 then
+							pos1, pos2 = trilaterate( tFixes[1], tFixes[2], tFixes[#tFixes] )
+						else
+							pos1, pos2 = narrow( pos1, pos2, tFixes[#tFixes] )
+						end
+					end
+					
+					if pos1 and not pos2 then
+						break
 					end
 				end
 			end
-		end
-		timeElapsed = os.clock() - startTime
+			
+		elseif e == "timer" then
+			-- We received a timeout
+			local timer = p1
+			if timer == timeout then
+				break
+			end
+		
+		end 
 	end
 	
-	if p1 and p2 then
+	-- Close the channel, if we opened one
+	if bCloseChannel then
+		modem.close( os.getComputerID() )
+	end
+	
+	-- Return the response
+	if pos1 and pos2 then
 		if _bDebug then
 			print( "Ambiguous position" )
-			print( "Could be "..p1.x..","..p1.y..","..p1.z.." or "..p2.x..","..p2.y..","..p2.z )
+			print( "Could be "..pos1.x..","..pos1.y..","..pos1.z.." or "..pos2.x..","..pos2.y..","..pos2.z )
 		end
 		return nil
-	elseif p1 then
+	elseif pos1 then
 		if _bDebug then
-			print( "Position is "..p1.x..","..p1.y..","..p1.z )
+			print( "Position is "..pos1.x..","..pos1.y..","..pos1.z )
 		end
-		return p1.x, p1.y, p1.z
+		return pos1.x, pos1.y, pos1.z
 	else
 		if _bDebug then
 			print( "Could not determine position" )

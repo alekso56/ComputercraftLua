@@ -1,8 +1,12 @@
-New Features in ComputerCraft 1.45:
+New Features in ComputerCraft 1.5:
 
-. Added Advanced Computers
-. Added Advanced Monitors
-. New program: paint by nitrogenfingers
-. New API: paintutils
-. New term functions: term.setBackgroundColor, term.setTextColor, term.isColor
-. New turtle function: turtle.transferTo
+. Redesigned Wireless Modems; they can now send and receive on multiple channels, independent of the computer ID. To use these features, interface with modem peripherals directly. The rednet API still functions as before
+. Floppy Disks can now be dyed with multiple dyes, just like armour
+. The "excavate" program now retains fuel in it's inventory, so can run unattended
+. turtle.place() now tries all possible block orientations before failing
+. turtle.refuel(0) returns true if a fuel item is selected
+. turtle.craft(0) returns true if the inventory is a valid recipe
+. The in-game help system now has documentation for all the peripherals and their methods, including the new modem functionality
+. A romantic surprise
+
+Type "help changelog" to see the full version history.

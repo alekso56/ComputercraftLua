@@ -1,0 +1,11 @@
+The Wireless Modem is a peripheral device available for CraftOS. Type "help peripheral" to learn about using the Peripheral API to connect with peripherals. When a Wireless Modem is connected, peripheral.getType() will return "modem".
+
+Methods exposed by the Wireless Modem:
+open( channel )
+isOpen( channel )
+close( channel )
+closeAll()
+transmit( channel, replyChannel, message )
+
+Events fired by the WirelessModem:
+"modem_message" when a message is received on an open channel. Arguments are side, channel, replyChannel, message, distance

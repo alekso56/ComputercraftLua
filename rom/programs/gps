@@ -11,76 +11,79 @@ if #tArgs < 1 then
 	printUsage()
 	return
 end
-
-local sOpenedSide = nil
-local function open()
-	local bOpen, sFreeSide = false, nil
-	for n,sSide in pairs(rs.getSides()) do	
-		if peripheral.getType( sSide ) == "modem" then
-			sFreeSide = sSide
-			if rednet.isOpen( sSide ) then
-				bOpen = true
-				break
-			end
-		end
-	end
-	
-	if not bOpen then
-		if sFreeSide then
-			print( "No modem active. Opening "..sFreeSide.." modem" )
-			rednet.open( sFreeSide )
-			sOpenedSide = sFreeSide
-			return true
-		else
-			print( "No modem attached" )
-			return false
-		end
-	end
-	return true
-end
-
-function close()
-	if sOpenedSide then
-		rednet.close( sOpenedSide )
-	end
-end
 	
 local sCommand = tArgs[1]
 if sCommand == "locate" then
-	if open() then
-		gps.locate( 2, true )
-		close()
-	end
+	-- "gps locate"
+	-- Just locate this computer (this will print the results)
+	gps.locate( 2, true )
 	
 elseif sCommand == "host" then
-	if open() then
-		local x,y,z
-		if #tArgs >= 4 then
-			x = tonumber(tArgs[2])
-			y = tonumber(tArgs[3])
-			z = tonumber(tArgs[4])
-			if x == nil or y == nil or z == nil then
-				printUsage()
-				return
-			end
-			print( "Position is "..x..","..y..","..z )
-		else
-			x,y,z = gps.locate( 2, true )
-			if x == nil then
-				print( "Run \"gps host <x> <y> <z>\" to set position manually" )
-				close()
-				return
-			end
+	-- "gps host"
+	-- Act as a GPS host
+	
+	-- Find a modem
+	local sModemSide = nil
+	for n,sSide in ipairs( rs.getSides() ) do
+		if peripheral.getType( sSide ) == "modem" then	
+			sModemSide = sSide
+			break
 		end
+	end
+
+	if sModemSide == nil then
+		print( "No modem attached" )
+		return
+	end
 	
-		print( "Serving GPS requests" )
+	-- Open a channel
+	local modem = peripheral.wrap( sModemSide )
+	local bCloseChannel = false
+	if not modem.isOpen( gps.CHANNEL_GPS ) then
+		print( "Opening GPS channel on "..sModemSide.." modem" )
+		modem.open( gps.CHANNEL_GPS )
+		bCloseChannel = true
+	end
+
+	-- Determine position
+	local x,y,z
+	if #tArgs >= 4 then
+		-- Position is manually specified
+		x = tonumber(tArgs[2])
+		y = tonumber(tArgs[3])
+		z = tonumber(tArgs[4])
+		if x == nil or y == nil or z == nil then
+			printUsage()
+			return
+		end
+		print( "Position is "..x..","..y..","..z )
+	else
+		-- Position is to be determined using locate		
+		x,y,z = gps.locate( 2, true )
+		if x == nil then
+			print( "Run \"gps host <x> <y> <z>\" to set position manually" )
+			if bCloseChannel then
+				print( "Closing GPS channel" )
+				modem.close( gps.CHANNEL_GPS )
+			end
+			return
+		end
+	end
 	
-		local nServed = 0
-		while true do
-			sender,message,distance = rednet.receive()
-			if message == "PING" then
-				rednet.send(sender, textutils.serialize({x,y,z}))
-				
+	-- Serve requests indefinately
+	print( "Serving GPS requests. Press Q to quit" )
+	
+	local nServed = 0
+	while true do
+		local e, p1, p2, p3, p4, p5 = os.pullEvent()
+		if e == "modem_message" then
+			-- We received a message from a modem
+			local sSide, sChannel, sReplyChannel, sMessage, nDistance = p1, p2, p3, p4, p5
+			if sSide == sModemSide and sChannel == gps.CHANNEL_GPS and sMessage == "PING" then
+				-- We received a ping message on the GPS channel, send a response
+				modem.transmit( sReplyChannel, gps.CHANNEL_GPS, textutils.serialize({x,y,z}) )
+			
+				-- Print the number of requests handled
 				nServed = nServed + 1
 				if nServed > 1 then
 					local x,y = term.getCursorPos()
@@ -88,10 +91,26 @@ elseif sCommand == "host" then
 				end
 				print( nServed.." GPS Requests served" )
 			end
+			
+		elseif e == "key" then
+			-- We received a key press, quit
+			local key = p1
+			if key == keys.q then
+				os.pullEvent("char")
+				break
+			end
+			
 		end
 	end
 	
+	if bCloseChannel then
+		print( "Closing GPS channel" )
+		modem.close( gps.CHANNEL_GPS )
+	end
+	
 else
+	-- "gps somethingelse"
+	-- Error
 	printUsage()
-	return
+	
 end

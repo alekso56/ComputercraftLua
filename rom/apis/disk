@@ -5,9 +5,22 @@ end
 
 function isPresent( side )
 	if isDrive( side ) then
-		return peripheral.call( side, "isPresent" )
+		return peripheral.call( side, "isDiskPresent" )
 	end
 	return false
+end
+
+function getLabel( side )
+	if isDrive( side ) then
+		return peripheral.call( side, "getDiskLabel" )
+	end
+	return nil
+end
+
+function setLabel( side, label )
+	if isDrive( side ) then
+		peripheral.call( side, "setDiskLabel", label )
+	end
 end
 
 function hasData( side )
@@ -20,26 +33,6 @@ end
 function getMountPath( side )
 	if isDrive( side ) then
 		return peripheral.call( side, "getMountPath" )
-	end
-	return nil
-end
-
-function setLabel( side, label )
-	if isDrive( side ) then
-		peripheral.call( side, "setLabel", label )
-	end
-end
-
-function getLabel( side )
-	if isDrive( side ) then
-		return peripheral.call( side, "getLabel" )
-	end
-	return nil
-end
-
-function getDiskID( side )
-	if isDrive( side ) then
-		return peripheral.call( side, "getDiskID" )
 	end
 	return nil
 end
@@ -78,6 +71,14 @@ end
 
 function eject( side )
 	if isDrive( side ) then
-		peripheral.call( side, "eject" )
+		peripheral.call( side, "ejectDisk" )
 	end
 end
+
+function getID( side )
+	if isDrive( side ) then
+		return peripheral.call( side, "getDiskID" )
+	end
+	return nil
+end
+

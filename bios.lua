@@ -30,7 +30,6 @@ pcall = function( _fn, ... )
 		end
 	)
 end
-]]
 
 function pairs( _t )
 	local typeT = type( _t )
@@ -91,6 +90,8 @@ function string.gmatch( _s, _pattern )
 		return string.match( _s, _pattern, nFirst )
 	end
 end
+]]
+
 
 local nativesetmetatable = setmetatable
 function setmetatable( _o, _t )
@@ -110,9 +111,9 @@ end
 -- Install lua parts of the os api
 function os.version()
 	if turtle then
-		return "TurtleOS 1.4"
+		return "TurtleOS 1.5"
 	end
-	return "CraftOS 1.4"
+	return "CraftOS 1.5"
 end
 
 function os.pullEventRaw( _sFilter )
@@ -120,12 +121,11 @@ function os.pullEventRaw( _sFilter )
 end
 
 function os.pullEvent( _sFilter )
-	local event, p1, p2, p3, p4, p5 = os.pullEventRaw( _sFilter )
-	if event == "terminate" then
-		printError( "Terminated" )
-		error()
+	local eventData = { os.pullEventRaw( _sFilter ) }
+	if eventData[1] == "terminate" then
+		error( "Terminated", 0 )
 	end
-	return event, p1, p2, p3, p4, p5
+	return unpack( eventData )
 end
 
 -- Install globals
@@ -438,6 +438,14 @@ function os.shutdown()
 	end
 end
 
+local nativeReboot = os.reboot
+function os.reboot()
+	nativeReboot()
+	while true do
+		coroutine.yield()
+	end
+end
+
 -- Install the lua part of the HTTP api (if enabled)
 if http then
 	local function wrapRequest( _url, _post )
@@ -501,14 +509,13 @@ end
 
 -- Run the shell
 local ok, err = pcall( function()
-	parallel.waitForAny(
-		function()
-			rednet.run()
-		end,
+	parallel.waitForAny( 
 		function()
 			os.run( {}, "rom/programs/shell" )
-		end
-	)
+		end,
+		function()
+			rednet.run()
+		end )
 end )
 
 -- If the shell errored, let the user read it.

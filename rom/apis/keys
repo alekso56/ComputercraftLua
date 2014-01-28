@@ -4,7 +4,7 @@
 
 local nothing = 42
 local tKeys = {
-	"escape", 	"one", 		"two", 		"three", 	"four",			-- 1
+	nil,	 	"one", 		"two", 		"three", 	"four",			-- 1
 	"five", 	"six", 		"seven", 	"eight", 	"nine",			-- 6
 	"zero", 	"minus", 	"equals", 	"backspace","tab",			-- 11
 	"q", 		"w", 		"e", 		"r",		"t",			-- 16

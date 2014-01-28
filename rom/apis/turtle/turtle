@@ -8,9 +8,13 @@ native = turtle.native or turtle
 local function waitForResponse( _id )
 	local event, responseID, success
 	while event ~= "turtle_response" or responseID ~= _id do
-		event, responseID, success = os.pullEvent( "turtle_response" )
+		event, responseID, success, error = os.pullEvent( "turtle_response" )
 	end
-	return success
+	if success then
+		return true
+	else
+		return false, error
+	end
 end
 
 local function wrap( _sCommand )

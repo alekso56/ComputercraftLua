@@ -10,9 +10,9 @@ if fs.exists( sPath ) then
 	write( fs.getDrive( sPath ) .. " (" )
 	local nSpace = fs.getFreeSpace( sPath )
 	if nSpace > 1024 * 1024 then
-		print( (math.floor( nSpace / (102.4 * 1024) ) / 10) .. "MB remaining)" )
+		print( (math.floor( nSpace / (100 * 1000) ) / 10) .. "MB remaining)" )
 	elseif nSpace > 1024 then
-		print( math.floor( nSpace / 1024 ) .. "KB remaining)" )
+		print( math.floor( nSpace / 1000 ) .. "KB remaining)" )
 	else
 		print ( nSpace .. "B remaining)" )
 	end

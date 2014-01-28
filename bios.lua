@@ -90,7 +90,6 @@ function string.gmatch( _s, _pattern )
 		return string.match( _s, _pattern, nFirst )
 	end
 end
-]]
 
 local nativesetmetatable = setmetatable
 function setmetatable( _o, _t )
@@ -106,6 +105,7 @@ function setmetatable( _o, _t )
 	end
 	return nativesetmetatable( _o, _t )
 end
+]]
 
 -- Install lua parts of the os api
 function os.version()
@@ -234,7 +234,7 @@ function read( _sReplaceChar, _tHistory )
 		term.setCursorPos( sx, sy )
 		local sReplace = _sCustomReplaceChar or _sReplaceChar
 		if sReplace then
-			term.write( string.rep(sReplace, string.len(sLine) - nScroll) )
+			term.write( string.rep( sReplace, string.len(sLine) - nScroll ) )
 		else
 			term.write( string.sub( sLine, nScroll + 1 ) )
 		end
@@ -263,6 +263,7 @@ function read( _sReplaceChar, _tHistory )
 			elseif param == keys.right then
 				-- Right				
 				if nPos < string.len(sLine) then
+					redraw(" ")
 					nPos = nPos + 1
 					redraw()
 				end
@@ -270,7 +271,7 @@ function read( _sReplaceChar, _tHistory )
 			elseif param == keys.up or param == keys.down then
                 -- Up or down
 				if _tHistory then
-					redraw(" ");
+					redraw(" ")
 					if param == keys.up then
 						-- Up
 						if nHistoryPos == nil then
@@ -288,7 +289,6 @@ function read( _sReplaceChar, _tHistory )
 							nHistoryPos = nHistoryPos + 1
 						end						
 					end
-					
 					if nHistoryPos then
                     	sLine = _tHistory[nHistoryPos]
                     	nPos = string.len( sLine ) 
@@ -301,23 +301,25 @@ function read( _sReplaceChar, _tHistory )
 			elseif param == keys.backspace then
 				-- Backspace
 				if nPos > 0 then
-					redraw(" ");
+					redraw(" ")
 					sLine = string.sub( sLine, 1, nPos - 1 ) .. string.sub( sLine, nPos + 1 )
 					nPos = nPos - 1					
 					redraw()
 				end
 			elseif param == keys.home then
 				-- Home
+				redraw(" ")
 				nPos = 0
 				redraw()		
 			elseif param == keys.delete then
 				if nPos < string.len(sLine) then
-					redraw(" ");
+					redraw(" ")
 					sLine = string.sub( sLine, 1, nPos ) .. string.sub( sLine, nPos + 2 )				
 					redraw()
 				end
 			elseif param == keys["end"] then
 				-- End
+				redraw(" ")
 				nPos = string.len(sLine)
 				redraw()
 			end
@@ -467,7 +469,7 @@ if http then
 		return wrapRequest( _url, _post or "" )
 	end
 end
-			
+
 -- Load APIs
 local tApis = fs.list( "rom/apis" )
 for n,sFile in ipairs( tApis ) do
@@ -513,4 +515,3 @@ pcall( function()
 	os.pullEvent( "key" ) 
 end )
 os.shutdown()
-

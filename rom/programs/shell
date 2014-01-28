@@ -12,8 +12,20 @@ local tEnv = {
 	["shell"] = shell,
 }
 
--- Install shell API
-function shell.run( _sCommand, ... )
+-- Colours
+local promptColour, textColour, bgColour
+if term.isColour() then
+	promptColour = colours.yellow
+	textColour = colours.white
+	bgColour = colours.black
+else
+	promptColour = colours.white
+	textColour = colours.white
+	bgColour = colours.black
+end
+
+
+local function run( _sCommand, ... )
 	local sPath = shell.resolveProgram( _sCommand )
 	if sPath ~= nil then
 		tProgramStack[#tProgramStack + 1] = sPath
@@ -21,9 +33,27 @@ function shell.run( _sCommand, ... )
 		tProgramStack[#tProgramStack] = nil
 		return result
    	else
-    	print( "No such program" )
+    	printError( "No such program" )
     	return false
     end
+end
+
+local function runLine( _sLine )
+	local tWords = {}
+	for match in string.gmatch( _sLine, "[^ \t]+" ) do
+		table.insert( tWords, match )
+	end
+
+	local sCommand = tWords[1]
+	if sCommand then
+		return run( sCommand, unpack( tWords, 2 ) )
+	end
+	return false
+end
+
+-- Install shell API
+function shell.run( ... )
+	return runLine( table.concat( { ... }, " " ) )
 end
 
 function shell.exit()
@@ -133,7 +163,10 @@ function shell.aliases()
 	return tCopy
 end
 	
+term.setBackgroundColor( bgColour )
+term.setTextColour( promptColour )
 print( os.version() )
+term.setTextColour( textColour )
 
 -- If this is the toplevel shell, run the startup programs
 if parentShell == nil then
@@ -169,20 +202,14 @@ end
 -- Read commands and execute them
 local tCommandHistory = {}
 while not bExit do
+	term.setBackgroundColor( bgColour )
+	term.setTextColour( promptColour )
 	write( shell.dir() .. "> " )
+	term.setTextColour( textColour )
 
 	local sLine = read( nil, tCommandHistory )
 	table.insert( tCommandHistory, sLine )
-	
-	local tWords = {}
-	for match in string.gmatch(sLine, "[^ \t]+") do
-		table.insert( tWords, match )
-	end
-
-	local sCommand = tWords[1]
-	if sCommand then
-		shell.run( sCommand, unpack( tWords, 2 ) )
-	end
+	runLine( sLine )
 end
 
 -- If this is the toplevel shell, run the shutdown program

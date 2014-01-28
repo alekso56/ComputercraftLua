@@ -8,6 +8,9 @@ end
 if http then
 	sPath = sPath..":/rom/programs/http"
 end
+if term.isColor() then
+	sPath = sPath..":/rom/programs/color"
+end
 
 shell.setPath( sPath )
 help.setPath( "/rom/help" )

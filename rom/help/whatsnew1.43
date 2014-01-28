@@ -1,0 +1,6 @@
+New Features in ComputerCraft 1.43:
+
+. Added Printed Pages
+. Added Printed Books
+. Fixed incompatibility with Forge 275 and above
+. Labelled Turtles now keep their fuel when broken

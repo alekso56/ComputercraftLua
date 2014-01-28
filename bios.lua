@@ -1,4 +1,112 @@
 
+--[[
+-- Install safe versions of various library functions
+-- These will not put cfunctions on the stack, so don't break serialisation
+xpcall = function( _fn, _fnErrorHandler )
+	local typeT = type( _fn )
+	assert( typeT == "function", "bad argument #1 to xpcall (function expected, got "..typeT..")" )
+	local co = coroutine.create( _fn )
+	local tResults = { coroutine.resume( co ) }
+	while coroutine.status( co ) ~= "dead" do
+		tResults = { coroutine.resume( co, coroutine.yield() ) }
+	end
+	if tResults[1] == true then
+		return true, unpack( tResults, 2 )
+	else
+		return false, _fnErrorHandler( tResults[2] )
+	end
+end
+
+pcall = function( _fn, ... )
+	local typeT = type( _fn )
+	assert( typeT == "function", "bad argument #1 to pcall (function expected, got "..typeT..")" )
+	local tArgs = { ... }
+	return xpcall( 
+		function()
+			return _fn( unpack( tArgs ) )
+		end,
+		function( _error )
+			return _error
+		end
+	)
+end
+]]
+
+function pairs( _t )
+	local typeT = type( _t )
+	if typeT ~= "table" then
+		error( "bad argument #1 to pairs (table expected, got "..typeT..")", 2 )
+	end
+	return next, _t, nil
+end
+
+function ipairs( _t )
+	local typeT = type( _t )
+	if typeT ~= "table" then
+		error( "bad argument #1 to ipairs (table expected, got "..typeT..")", 2 )
+	end
+	return function( t, var )
+		var = var + 1
+		local value = t[var] 
+		if value == nil then
+			return
+		end
+		return var, value
+	end, _t, 0
+end
+
+function coroutine.wrap( _fn )
+	local typeT = type( _fn )
+	if typeT ~= "function" then
+		error( "bad argument #1 to coroutine.wrap (function expected, got "..typeT..")", 2 )
+	end
+	local co = coroutine.create( _fn )
+	return function( ... )
+		local tResults = { coroutine.resume( co, ... ) }
+		if tResults[1] then
+			return unpack( tResults, 2 )
+		else
+			error( tResults[2], 2 )
+		end
+	end
+end
+
+function string.gmatch( _s, _pattern )
+	local type1 = type( _s )
+	if type1 ~= "string" then
+		error( "bad argument #1 to string.gmatch (string expected, got "..type1..")", 2 )
+	end
+	local type2 = type( _pattern )
+	if type2 ~= "string" then
+		error( "bad argument #2 to string.gmatch (string expected, got "..type2..")", 2 )
+	end
+	
+	local nPos = 1
+	return function()
+		local nFirst, nLast = string.find( _s, _pattern, nPos )
+		if nFirst == nil then
+			return
+		end		
+		nPos = nLast + 1
+		return string.match( _s, _pattern, nFirst )
+	end
+end
+
+local nativesetmetatable = setmetatable
+function setmetatable( _o, _t )
+	if _t and type(_t) == "table" then
+		local idx = rawget( _t, "__index" )
+		if idx and type( idx ) == "table" then
+			rawset( _t, "__index", function( t, k ) return idx[k] end )
+		end
+		local newidx = rawget( _t, "__newindex" )
+		if newidx and type( newidx ) == "table" then
+			rawset( _t, "__newindex", function( t, k, v ) newidx[k] = v end )
+		end
+	end
+	return nativesetmetatable( _o, _t )
+end
+
 -- Install lua parts of the os api
 function os.version()
 	if turtle then
@@ -14,7 +122,7 @@ end
 function os.pullEvent( _sFilter )
 	local event, p1, p2, p3, p4, p5 = os.pullEventRaw( _sFilter )
 	if event == "terminate" then
-		print( "Terminated" )
+		printError( "Terminated" )
 		error()
 	end
 	return event, p1, p2, p3, p4, p5
@@ -37,8 +145,8 @@ function write( sText )
 		if y + 1 <= h then
 			term.setCursorPos(1, y + 1)
 		else
-			term.scroll(1)
 			term.setCursorPos(1, h)
+			term.scroll(1)
 		end
 		x, y = term.getCursorPos()
 		nLinesPrinted = nLinesPrinted + 1
@@ -67,16 +175,16 @@ function write( sText )
 			if string.len(text) > w then
 				-- Print a multiline word				
 				while string.len( text ) > 0 do
-				if x > w then
-					newLine()
-				end
+					if x > w then
+						newLine()
+					end
 					term.write( text )
 					text = string.sub( text, (w-x) + 2 )
 					x,y = term.getCursorPos()
 				end
 			else
 				-- Print a word normally
-				if x + string.len(text) > w then
+				if x + string.len(text) - 1 > w then
 					newLine()
 				end
 				term.write( text )
@@ -97,7 +205,15 @@ function print( ... )
 	return nLinesPrinted
 end
 
-function read( _sReplaceChar, _tHistory )	
+function printError( ... )
+	if term.isColour() then
+		term.setTextColour( colours.red )
+	end
+	print( ... )
+	term.setTextColour( colours.white )
+end
+
+function read( _sReplaceChar, _tHistory )
 	term.setCursorBlink( true )
 
     local sLine = ""
@@ -109,17 +225,17 @@ function read( _sReplaceChar, _tHistory )
 	
 	local w, h = term.getSize()
 	local sx, sy = term.getCursorPos()	
-	local function redraw()
+	
+	local function redraw( _sCustomReplaceChar )
 		local nScroll = 0
 		if sx + nPos >= w then
 			nScroll = (sx + nPos) - w
 		end
 			
 		term.setCursorPos( sx, sy )
-		term.write( string.rep(" ", w - sx + 1) )
-		term.setCursorPos( sx, sy )
-		if _sReplaceChar then
-			term.write( string.rep(_sReplaceChar, string.len(sLine) - nScroll) )
+		local sReplace = _sCustomReplaceChar or _sReplaceChar
+		if sReplace then
+			term.write( string.rep(sReplace, string.len(sLine) - nScroll) )
 		else
 			term.write( string.sub( sLine, nScroll + 1 ) )
 		end
@@ -155,6 +271,7 @@ function read( _sReplaceChar, _tHistory )
 			elseif param == keys.up or param == keys.down then
                 -- Up or down
 				if _tHistory then
+					redraw(" ");
 					if param == keys.up then
 						-- Up
 						if nHistoryPos == nil then
@@ -185,10 +302,25 @@ function read( _sReplaceChar, _tHistory )
 			elseif param == keys.backspace then
 				-- Backspace
 				if nPos > 0 then
+					redraw(" ");
 					sLine = string.sub( sLine, 1, nPos - 1 ) .. string.sub( sLine, nPos + 1 )
 					nPos = nPos - 1					
 					redraw()
 				end
+			elseif param == keys.home then
+				-- Home
+				nPos = 0
+				redraw()		
+			elseif param == keys.delete then
+				if nPos < string.len(sLine) then
+					redraw(" ");
+					sLine = string.sub( sLine, 1, nPos ) .. string.sub( sLine, nPos + 2 )				
+					redraw()
+				end
+			elseif param == keys["end"] then
+				-- End
+				nPos = string.len(sLine)
+				redraw()
 			end
 		end
 	end
@@ -214,9 +346,9 @@ dofile = function( _sFile )
 	local fnFile, e = loadfile( _sFile )
 	if fnFile then
 		setfenv( fnFile, getfenv(2) )
-		fnFile()
+		return fnFile()
 	else
-		error( e )
+		error( e, 2 )
 	end
 end
 
@@ -226,21 +358,22 @@ function os.run( _tEnv, _sPath, ... )
     local fnFile, err = loadfile( _sPath )
     if fnFile then
         local tEnv = _tEnv
-        setmetatable( tEnv, { __index = _G } )
+        --setmetatable( tEnv, { __index = function(t,k) return _G[k] end } )
+		setmetatable( tEnv, { __index = _G } )
         setfenv( fnFile, tEnv )
         local ok, err = pcall( function()
         	fnFile( unpack( tArgs ) )
         end )
         if not ok then
         	if err and err ~= "" then
-	        	print( err )
+	        	printError( err )
 	        end
         	return false
         end
         return true
     end
     if err and err ~= "" then
-		print( err )
+		printError( err )
 	end
     return false
 end
@@ -250,37 +383,17 @@ local nativetype = type
 local nativeerror = error
 function getmetatable( _t )
 	if nativetype( _t ) == "string" then
-		nativeerror( "Attempt to access string metatable" )
+		nativeerror( "Attempt to access string metatable", 2 )
 		return nil
 	end
 	return nativegetmetatable( _t )
-end
-
-local bProtected = true
-local function protect( _t )
-	local meta = getmetatable( _t )
-	if meta == "Protected" then
-		-- already protected
-		return
-	end
-	
-	setmetatable( _t, {
-		__newindex = function( t, k, v )
-			if bProtected then
-				error( "Attempt to write to global" )
-			else
-				rawset( t, k, v )
-			end
-		end,
-		__metatable = "Protected",
-	} )
 end
 
 local tAPIsLoading = {}
 function os.loadAPI( _sPath )
 	local sName = fs.getName( _sPath )
 	if tAPIsLoading[sName] == true then
-		print( "API "..sName.." is already being loaded" )
+		printError( "API "..sName.." is already being loaded" )
 		return false
 	end
 	tAPIsLoading[sName] = true
@@ -292,7 +405,7 @@ function os.loadAPI( _sPath )
 		setfenv( fnAPI, tEnv )
 		fnAPI()
 	else
-		print( err )
+		printError( err )
         tAPIsLoading[sName] = nil
 		return false
 	end
@@ -301,21 +414,15 @@ function os.loadAPI( _sPath )
 	for k,v in pairs( tEnv ) do
 		tAPI[k] =  v
 	end
-	protect( tAPI )
 	
-	bProtected = false
-	_G[sName] = tAPI
-	bProtected = true
-	
+	_G[sName] = tAPI	
 	tAPIsLoading[sName] = nil
 	return true
 end
 
 function os.unloadAPI( _sName )
 	if _sName ~= "_G" and type(_G[_sName]) == "table" then
-		bProtected = false
 		_G[_sName] = nil
-		bProtected = true
 	end
 end
 
@@ -368,15 +475,7 @@ peripheral.wrap = function( _sSide )
 	end
 	return nil
 end
-
--- Protect the global table against modifications
-protect( _G )
-for k,v in pairs( _G ) do
-	if type(v) == "table" then
-		protect( v )
-	end
-end
-
+			
 -- Load APIs
 local tApis = fs.list( "rom/apis" )
 for n,sFile in ipairs( tApis ) do
@@ -414,7 +513,7 @@ end )
 
 -- If the shell errored, let the user read it.
 if not ok then
-	print( err )
+	printError( err )
 end
 
 pcall( function()
@@ -423,3 +522,4 @@ pcall( function()
 	os.pullEvent( "key" ) 
 end )
 os.shutdown()
+

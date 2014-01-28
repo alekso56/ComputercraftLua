@@ -12,17 +12,6 @@ if #tArgs < 1 then
 	return
 end
 
-local function readNumber()
-	local num = nil
-	while num == nil do
-		num = tonumber(read())
-		if not num then
-			write( "Not a number. Try again: " )
-		end
-	end
-	return math.floor( num + 0.5 )
-end
-
 local sOpenedSide = nil
 local function open()
 	local bOpen, sFreeSide = false, nil

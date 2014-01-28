@@ -40,12 +40,12 @@ end
 -- Wrap peripheral commands
 if peripheral.getType("left") == "workbench" then
 	turtle["craft"] = function( ... )
-		local id = peripheral.call( "left","craft", ... )
+		local id = peripheral.call( "left", "craft", ... )
 		return waitForResponse( id )
 	end
 elseif peripheral.getType("right") == "workbench" then
 	turtle["craft"] = function( ... )
-		local id = peripheral.call( "right","craft", ... )
+		local id = peripheral.call( "right", "craft", ... )
 		return waitForResponse( id )
 	end
 end

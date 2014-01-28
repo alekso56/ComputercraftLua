@@ -15,10 +15,19 @@ local tEnv = {
 }
 setmetatable( tEnv, { __index = getfenv() } )
 
+if term.isColour() then
+	term.setTextColour( colours.yellow )
+end
 print( "Interactive Lua prompt." )
 print( "Call exit() to exit." )
+term.setTextColour( colours.white )
+
 while bRunning do
+	--if term.isColour() then
+	--	term.setTextColour( colours.yellow )
+	--end
 	write( "lua> " )
+	--term.setTextColour( colours.white )
 	
 	local s = read( nil, tCommandHistory )
 	table.insert( tCommandHistory, s )
@@ -48,10 +57,10 @@ while bRunning do
         		n = n + 1
         	end
         else
-        	print( tResults[2] )
+        	printError( tResults[2] )
         end
     else
-    	print( e )
+    	printError( e )
     end
     
 end

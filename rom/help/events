@@ -7,3 +7,10 @@ The function os.pullEvent() will yield the program until a system event occurs. 
 "redstone" when the state of any of the redstone inputs change.
 "disk" or "disk_eject" when a disk is entered or removed from an adjacent disk drive. Argument is the side.
 "rednet_message" when a message is received from the rednet API.
+"peripheral" when a new peripheral is attached to the system. Argument is the side.
+"peripheral_detach" when a peripheral is removed from the system. Argument is the side.
+
+Events only on advanced computers:
+"mouse_click" when a user clicks the mouse. Arguments are button, xPos, yPos.
+"mouse_drag" when a user moves the mouse when held. Arguments are button, xPos, yPos.
+"mouse_scroll" when a user uses the scrollwheel on the mouse. Arguments are direction, xPos, yPos.

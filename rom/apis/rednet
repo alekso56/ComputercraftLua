@@ -395,11 +395,13 @@ end
 
 function receive( nTimeout )
 	local timer = nil
+	local sEvent = "rednet_message"
 	if nTimeout then
 		timer = os.startTimer( nTimeout )
+		sEvent = nil
 	end
 	while true do
-		local e, p1, p2, p3 = os.pullEvent()
+		local e, p1, p2, p3 = os.pullEvent( sEvent )
 		if e == "rednet_message" then
 			return p1, p2, p3
 		elseif e == "timer" and p1 == timer then

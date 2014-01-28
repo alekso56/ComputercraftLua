@@ -12,6 +12,20 @@ end
 
 local term = {}
 term.redirect = function( _object )
+	if _object == nil or type( _object ) ~= "table" then
+		error( "Invalid redirect object" )
+	end
+	for k,v in pairs( native ) do
+		if type( k ) == "string" and type( v ) == "function" then
+			if type( _object[k] ) ~= "function" then
+				_object[k] = function() 
+					term.restore()
+					error( "Redirect object is missing method "..k..". Restoring.")
+				end
+			end
+		end
+	end
+
 	tRedirectStack[#tRedirectStack + 1] = redirectTarget
 	redirectTarget = _object
 end

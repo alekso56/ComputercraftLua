@@ -38,7 +38,13 @@ if bundledCount > 0 then
 					if count > 0 then
 						write( " + " )
 					end
+					if term.isColour() then
+						term.setTextColour( nColour )
+					end
 					write( sColour )
+					if term.isColour() then
+						term.setTextColour( colours.white )
+					end
 					count = count + 1
 				end
 			end

@@ -1,0 +1,34 @@
+New Features in ComputerCraft 1.4:
+
+. Ported to Forge Mod Loader. ComputerCraft can now be ran directly from the .zip without extraction
+. Added Farming Turtles
+. Added Felling Turtles
+. Added Digging Turtles
+. Added Melee Turtles
+. Added Crafty Turtles
+. Added 14 new Turtle Combinations accessible by combining the turtle upgrades above
+. Labelled computers and turtles can now be crafted into turtles or other turtle types without losing their ID, label and data
+. Added a "Turtle Upgrade API" for mod developers to create their own tools and peripherals for turtles
+. Turtles can now attack entities with turtle.attack(), and collect their dropped items
+. Turtles can now use turtle.place() with any item the player can, and can interact with entities
+. Turtles can now craft items with turtle.craft()
+. Turtles can now place items into inventories with turtle.drop()
+. Changed the behaviour of turtle.place() and turtle.drop() to only consider the currently selected slot
+. Turtles can now pick up items from the ground, or from inventories, with turtle.suck()
+. Turtles can now compare items in their inventories
+. Turtles can place signs with text on them with turtle.place( [signText] )
+. Turtles now optionally require fuel items to move, and can refuel themselves
+. The size of the the turtle inventory has been increased to 16
+. The size of the turtle screen has been increased
+. New turtle functions: turtle.compareTo( [slotNum] ), turtle.craft(), turtle.attack(), turtle.attackUp(), turtle.attackDown(), turtle.dropUp(), turtle.dropDown(), turtle.getFuelLevel(), turtle.refuel()
+. New disk function: disk.getDiskID()
+. New turtle programs: craft, refuel
+. "excavate" program now much smarter: Will return items to a chest when full, attack mobs, and refuel itself automatically
+. New API: keys
+. Added optional Floppy Disk and Hard Drive space limits for computers and turtles
+. New fs function: fs.getFreeSpace( path ), also fs.getDrive() works again
+. The send and receive range of wireless modems now increases with altitude, allowing long range networking from high-altitude computers (great for GPS networks)
+. http.request() now supports https:// URLs
+. Right clicking a Disk Drive with a Floppy Disk or a Record when sneaking will insert the item into the Disk Drive automatically
+. The default size of the computer screen has been increased
+. Several stability and security fixes. LuaJ can now no longer leave dangling threads when a computer is unloaded, turtles can no longer be destroyed by tree leaves or walking off the edge of the loaded map. Computers no longer crash when used with RedPower frames.

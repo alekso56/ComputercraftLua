@@ -20,11 +20,28 @@ local scrollX, scrollY = 0,0
 local tLines = {}
 local bRunning = true
 
--- Menus and other small animals.
+-- Colours
+local highlightColour, keywordColour, commentColour, textColour, bgColour
+if term.isColour() then
+	bgColour = colours.black
+	textColour = colours.white
+	highlightColour = colours.yellow
+	keywordColour = colours.yellow
+	commentColour = colours.lime
+	stringColour = colours.red
+else
+	bgColour = colours.black
+	textColour = colours.white
+	highlightColour = colours.white
+	keywordColour = colours.white
+	commentColour = colours.white
+	stringColour = colours.white
+end
+
+-- Menus
 local bMenu = false
 local nMenuItem = 1
-local tMenuItems = {"Save", "Exit"}
-local tMenuOffsets = {1, 6}
+local tMenuItems = {"Save", "Exit", "Print"}
 local sStatus = "Press Ctrl to access menu"
 
 local function load(_sPath)
@@ -71,6 +88,63 @@ local function save( _sPath )
 	return ok
 end
 
+local tKeywords = {
+	["and"] = true,
+	["break"] = true,
+	["do"] = true,
+	["else"] = true,
+	["elseif"] = true,
+	["end"] = true,
+	["false"] = true,
+	["for"] = true,
+	["function"] = true,
+	["if"] = true,
+	["in"] = true,
+	["local"] = true,
+	["nil"] = true,
+	["not"] = true,
+	["or"] = true,
+	["repeat"] = true,
+	["return"] = true,
+	["then"] = true,
+	["true"] = true,
+	["until"]= true,
+	["while"] = true,
+}
+
+local function tryWrite( sLine, regex, colour )
+	local match = string.match( sLine, regex )
+	if match then
+		if type(colour) == "number" then
+			term.setTextColour( colour )
+		else
+			term.setTextColour( colour(match) )
+		end
+		term.write( match )
+		term.setTextColour( textColour )
+		return string.sub( sLine, string.len(match) + 1 )
+	end
+	return nil
+end
+
+local function writeHighlighted( sLine )
+	while string.len(sLine) > 0 do	
+		sLine = 
+			tryWrite( sLine, "^%-%-%[%[.-%]%]", commentColour ) or
+			tryWrite( sLine, "^%-%-.*", commentColour ) or
+			tryWrite( sLine, "^\".-[^\\]\"", stringColour ) or
+			tryWrite( sLine, "^\'.-[^\\]\'", stringColour ) or
+			tryWrite( sLine, "^%[%[.-%]%]", stringColour ) or
+			tryWrite( sLine, "^[%w_]+", function( match )
+				if tKeywords[ match ] then
+					return keywordColour
+				end
+				return textColour
+			end ) or
+			tryWrite( sLine, "^[^%w_]", textColour )
+	end
+end
+
 local function redrawText()
 	for y=1,h-1 do
 		term.setCursorPos( 1 - scrollX, y )
@@ -78,7 +152,7 @@ local function redrawText()
 
 		local sLine = tLines[ y + scrollY ]
 		if sLine ~= nil then
-			term.write( sLine )
+			writeHighlighted( sLine )
 		end
 	end
 	term.setCursorPos( x - scrollX, y - scrollY )
@@ -88,7 +162,7 @@ local function redrawLine(_nY)
 	local sLine = tLines[_nY]
 	term.setCursorPos( 1 - scrollX, _nY - scrollY )
 	term.clearLine()
-	term.write( sLine )
+	writeHighlighted( sLine )
 	term.setCursorPos( x - scrollX, _nY - scrollY )
 end
 
@@ -100,37 +174,50 @@ local function redrawMenu()
 	term.clearLine()
 
 	local sLeft, sRight
+	local nLeftColour, nLeftHighlight1, nLeftHighlight2
 	if bMenu then
 		local sMenu = ""
 		for n,sItem in ipairs( tMenuItems ) do
 			if n == nMenuItem then
-				sMenu = sMenu.."["..sItem.."]"
-			else
-				sMenu = sMenu.." "..sItem.." "
+				nLeftHighlight1 = sMenu:len() + 1
+				nLeftHighlight2 = sMenu:len() + sItem:len() + 2
 			end
+			sMenu = sMenu.." "..sItem.." "
 		end
 		sLeft = sMenu
+		nLeftColour = textColour
 	else
 		sLeft = sStatus
+		nLeftColour = highlightColour
 	end
-	sRight = "Ln "..y
 	
 	-- Left goes last so that it can overwrite the line numbers.
-	if sRight then
-		term.setCursorPos( w-sRight:len()+1, h )
-		term.write(sRight)
-	end
+	sRight = "Ln "..y
+	term.setTextColour( highlightColour )
+	term.setCursorPos( w-sRight:len() + 1, h )
+	term.write(sRight)
+
+	sRight = tostring(y)
+	term.setTextColour( textColour )
+	term.setCursorPos( w-sRight:len() + 1, h )
+	term.write(sRight)
+
 	if sLeft then
 		term.setCursorPos( 1, h )
-		term.write(sLeft)
+		term.setTextColour( nLeftColour )
+		term.write(sLeft)		
+		if nLeftHighlight1 then
+			term.setTextColour( highlightColour )
+			term.setCursorPos( nLeftHighlight1, h )
+			term.write( "[" )
+			term.setCursorPos( nLeftHighlight2, h )
+			term.write( "]" )
+		end
+		term.setTextColour( textColour )
 	end
 	
 	-- Cursor highlights selection
-	if bMenu then
-		term.setCursorPos( tMenuOffsets[nMenuItem], h )
-	else
-		term.setCursorPos( x - scrollX, y - scrollY )
-	end
+	term.setCursorPos( x - scrollX, y - scrollY )
 end
 
 local tMenuFuncs = { 
@@ -144,6 +231,94 @@ local tMenuFuncs = {
 			else
 				sStatus="Error saving to "..sPath
 			end
+		end
+		redrawMenu()
+	end,
+	Print=function()
+		local sPrinterSide = nil
+		for n,sSide in ipairs(rs.getSides()) do
+			if peripheral.isPresent(sSide) and peripheral.getType(sSide) == "printer" then
+				sPrinterSide = sSide
+				break
+			end
+		end
+		
+		if not sPrinterSide then
+			sStatus = "No printer attached"
+			return
+		end
+
+		local nPage = 0
+		local sName = fs.getName( sPath )
+		local printer = peripheral.wrap(sPrinterSide)
+		if printer.getInkLevel() < 1 then
+			sStatus = "Printer out of ink"
+			return
+		elseif printer.getPaperLevel() < 1 then
+			sStatus = "Printer out of paper"
+			return
+		end
+		
+		local terminal = {
+			getCursorPos = printer.getCursorPos,
+			setCursorPos = printer.setCursorPos,
+			getSize = printer.getPageSize,
+			write = printer.write,
+		}
+		terminal.scroll = function()
+			if nPage == 1 then
+				printer.setPageTitle( sName.." (page "..nPage..")" )			
+			end
+			
+			while not printer.newPage()	do
+				if printer.getInkLevel() < 1 then
+					sStatus = "Printer out of ink, please refill"
+				elseif printer.getPaperLevel() < 1 then
+					sStatus = "Printer out of paper, please refill"
+				else
+					sStatus = "Printer output tray full, please empty"
+				end
+	
+				term.restore()
+				redrawMenu()
+				term.redirect( terminal )
+				
+				local timer = os.startTimer(0.5)
+				sleep(0.5)
+			end
+
+			nPage = nPage + 1
+			if nPage == 1 then
+				printer.setPageTitle( sName )
+			else
+				printer.setPageTitle( sName.." (page "..nPage..")" )
+			end
+		end
+		
+		bMenu = false
+		term.redirect( terminal )
+		local ok, error = pcall( function()
+			term.scroll()
+			for n, sLine in ipairs( tLines ) do
+				print( sLine )
+			end
+		end )
+		term.restore()
+		if not ok then
+			print( error )
+		end
+		
+		while not printer.endPage() do
+			sStatus = "Printer output tray full, please empty"
+			redrawMenu()
+			sleep( 0.5 )
+		end
+		bMenu = true
+			
+		if nPage > 1 then
+			sStatus = "Printed "..nPage.." Pages"
+		else
+			sStatus = "Printed 1 Page"
 		end
 		redrawMenu()
 	end,
@@ -190,6 +365,7 @@ local function setCursor( x, y )
 		redrawText()
 	end
 	term.setCursorPos( screenX, screenY )
+	
 	-- Statusbar now pertains to menu, it would probably be safe to redraw the menu on every key event.
 	redrawMenu()
 end
@@ -197,6 +373,7 @@ end
 -- Actual program functionality begins
 load(sPath)
 
+term.setBackgroundColour( bgColour )
 term.clear()
 term.setCursorPos(x,y)
 term.setCursorBlink( true )
@@ -206,7 +383,7 @@ redrawMenu()
 
 -- Handle input
 while bRunning do
-	local sEvent, param = os.pullEvent()
+	local sEvent, param, param2, param3 = os.pullEvent()
 	if sEvent == "key" then
 		if param == keys.up then
 			-- Up
@@ -236,7 +413,7 @@ while bRunning do
 				-- Indent line
 				-- IN CASE OF INSERT TAB IN PLACE:
 				-- tLines[y] = string.sub(sLine,1,x-1) .. "  " .. string.sub(sLine,x)
-				tLines[y]='  '..tLines[y]
+				tLines[y]="  "..tLines[y]
 				x = x + 2
 				setCursor( x, y )
 				redrawLine(y)
@@ -267,7 +444,6 @@ while bRunning do
 		elseif param == keys.home then
 			-- Home
 			if not bMenu then
-				-- [TODO] respect indentation here
 				-- Move cursor to the beginning
 				x=1
 				setCursor(x,y)
@@ -385,6 +561,7 @@ while bRunning do
 			end
 			redrawMenu()
 		end
+		
 	elseif sEvent == "char" then
 		if not bMenu then
 			-- Input text
@@ -401,6 +578,41 @@ while bRunning do
 					doMenuItem( n )
 					break
 				end
+			end
+		end
+		
+	elseif sEvent == "mouse_click" then
+		if not bMenu then
+			if param == 1 then
+				-- Left click
+				local cx,cy = param2, param3
+				if cy < h then
+					y = math.min( math.max( scrollY + cy, 1 ), #tLines )
+					x = math.min( math.max( scrollX + cx, 1 ), string.len( tLines[y] ) + 1 )
+					setCursor( x, y )
+				end
+			end
+		end
+		
+	elseif sEvent == "mouse_scroll" then
+		if not bMenu then
+			if param == -1 then
+				-- Scroll up
+				if scrollY > 0 then
+					-- Move cursor up
+					scrollY = scrollY - 1
+					redrawText()
+				end
+			
+			elseif param == 1 then
+				-- Scroll down
+				local nMaxScroll = #tLines - (h-1)
+				if scrollY < nMaxScroll then
+					-- Move cursor down
+					scrollY = scrollY + 1
+					redrawText()
+				end
+				
 			end
 		end
 	end

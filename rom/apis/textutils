@@ -80,9 +80,11 @@ local function tabulateCommon( bPaged, ... )
 	
 	local w,h = term.getSize()
 	local nMaxLen = w / 8
-	for n, t in pairs( tAll ) do
-		for n, sItem in pairs(t) do
-			nMaxLen = math.max( string.len( sItem ) + 1, nMaxLen )
+	for n, t in ipairs( tAll ) do
+		if type(t) == "table" then
+			for n, sItem in pairs(t) do
+				nMaxLen = math.max( string.len( sItem ) + 1, nMaxLen )
+			end
 		end
 	end
 	local nCols = math.floor( w / nMaxLen )
@@ -114,9 +116,13 @@ local function tabulateCommon( bPaged, ... )
 		end
 		print()
 	end
-	for n, t in pairs( tAll ) do
-		if #t > 0 then
-			drawCols( t )
+	for n, t in ipairs( tAll ) do
+		if type(t) == "table" then
+			if #t > 0 then
+				drawCols( t )
+			end
+		elseif type(t) == "number" then
+			term.setTextColor( t )
 		end
 	end	
 end
@@ -151,7 +157,7 @@ local function serializeImpl( t, tTracking )
 		return tostring(t)
 		
 	else
-		error( "Cannot serialize type "..t )
+		error( "Cannot serialize type "..sType )
 		
 	end
 end

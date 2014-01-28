@@ -44,13 +44,6 @@ function getDiskID( side )
 	return nil
 end
 
-function getSerial( side )
-	if isDrive( side ) then
-		return peripheral.call( side, "getSerial" )
-	end
-	return nil
-end
-
 function hasAudio( side )
 	if isDrive( side ) then
 		return peripheral.call( side, "hasAudio" )

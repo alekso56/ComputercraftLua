@@ -23,7 +23,7 @@ if #tArgs == 1 then
 	sDrive = nil
 else
 	sCommand = tArgs[1]
-	local tSides = rs.getSides()
+	local tSides = peripheral.getNames()
 	for n,sSide in ipairs( tSides ) do
 		if sSide == tArgs[2] then
 			sDrive = sSide

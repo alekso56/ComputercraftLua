@@ -1,8 +1,11 @@
 Functions in the Redstone API:
+redstone.getSides( )
 redstone.getInput( side )
 redstone.setOutput( side, boolean )
 redstone.getOutput( side )
-redstone.getSides( )
+redstone.getAnalogInput( side )
+redstone.setAnalogOutput( side, number )
+redstone.getAnalogOutput( side )
 
 Functions in the Redstone API for working with RedPower bundled cables:
 redstone.getBundledInput( side )

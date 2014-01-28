@@ -92,7 +92,6 @@ function string.gmatch( _s, _pattern )
 end
 ]]
 
-
 local nativesetmetatable = setmetatable
 function setmetatable( _o, _t )
 	if _t and type(_t) == "table" then
@@ -467,21 +466,6 @@ if http then
 	http.post = function( _url, _post )
 		return wrapRequest( _url, _post or "" )
 	end
-end
-
--- Install the lua part of the peripheral api
-peripheral.wrap = function( _sSide )
-	if peripheral.isPresent( _sSide ) then
-		local tMethods = peripheral.getMethods( _sSide )
-		local tResult = {}
-		for n,sMethod in ipairs( tMethods ) do
-			tResult[sMethod] = function( ... )
-				return peripheral.call( _sSide, sMethod, ... )
-			end
-		end
-		return tResult
-	end
-	return nil
 end
 			
 -- Load APIs

@@ -59,7 +59,7 @@ end
 
 function stopAudio( side )
 	if not side then
-		for n,sSide in ipairs( redstone.getSides() ) do
+		for n,sSide in ipairs( peripheral.getNames() ) do
 			stopAudio( sSide )
 		end
 	else

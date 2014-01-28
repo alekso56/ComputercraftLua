@@ -17,3 +17,4 @@ restore()
 
 Events fired by the Monitor:
 "monitor_touch" when an Advanced Monitor is touched by the player. Arguments are side, x, y
+"monitor_resize" when the size of a Monitor changes. Arguments is the side.

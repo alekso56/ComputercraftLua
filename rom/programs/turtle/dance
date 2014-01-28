@@ -78,7 +78,7 @@ textutils.slowWrite( "Preparing to get down" )
 textutils.slowPrint( "...", 1 )
 
 local sAudioSide = nil
-for n,sSide in pairs( rs.getSides() ) do
+for n,sSide in pairs( peripheral.getNames() ) do
 	if disk.hasAudio( sSide ) then
 		disk.playAudio( sSide )
 		print( "Jamming to "..disk.getAudioTitle( sSide ) )

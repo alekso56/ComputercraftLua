@@ -51,7 +51,7 @@ function send( nRecipient, sMessage )
 	for n,sSide in ipairs( rs.getSides() ) do
 		if isOpen( sSide ) then
 			peripheral.call( sSide, "transmit", nRecipient, os.getComputerID(), sMessage )
-			return
+			return true
 		end
 	end
 	error( "No open sides" )

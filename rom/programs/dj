@@ -23,7 +23,7 @@ elseif sCommand == "play" or sCommand == nil then
 	if sSide == nil then
 		-- No disc specified, pick one at random
 		local tSides = {}
-		for n,sSide in ipairs( redstone.getSides() ) do
+		for n,sSide in ipairs( peripheral.getNames() ) do
 			if disk.isPresent( sSide ) and disk.hasAudio( sSide ) then
 				table.insert( tSides, sSide )
 			end

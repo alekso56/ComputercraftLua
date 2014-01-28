@@ -236,9 +236,9 @@ local tMenuFuncs = {
 	end,
 	Print=function()
 		local sPrinterSide = nil
-		for n,sSide in ipairs(rs.getSides()) do
-			if peripheral.isPresent(sSide) and peripheral.getType(sSide) == "printer" then
-				sPrinterSide = sSide
+		for n,sName in ipairs(peripheral.getNames()) do
+			if peripheral.isPresent(sName) and peripheral.getType(sName) == "printer" then
+				sPrinterSide = sName
 				break
 			end
 		end

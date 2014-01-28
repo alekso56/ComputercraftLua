@@ -13,7 +13,7 @@ end
 
 if not http then
 	print( "Pastebin requires http API" )
-	print( "Set enableAPI_http to 1 in mod_ComputerCraft.cfg" )
+	print( "Set enableAPI_http to true in ComputerCraft.cfg" )
 	return
 end
 

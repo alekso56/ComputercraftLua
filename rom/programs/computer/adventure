@@ -21,7 +21,7 @@ local function hasStone( _nBiome )
 end
 
 local function hasRivers( _nBiome )
-	return _nBiome ~= 3 and _nBione ~= 5
+	return _nBiome ~= 3 and _nBiome ~= 5
 end
 
 local items = {

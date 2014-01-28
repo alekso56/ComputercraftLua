@@ -1,3 +1,20 @@
+New Features in ComputerCraft 1.51:
+
+. Ported to Minecraft 1.5
+. Added Wired Modems
+. Added Networking Cables
+. Made Wireless Modems more expensive to craft
+. New redstone API functions: getAnalogInput(), setAnalogOutput(), getAnalogOutput()
+. Peripherals can now be controlled remotely over wired networks. New peripheral API function: getNames()
+. New event: "monitor_resize" when the size of a monitor changes
+. Except for labelled computers and turtles, ComputerCraft blocks no longer drop items in creative mode
+. The pick block function works in creative mode now works for all ComputerCraft blocks
+. All blocks and items now use the IDs numbers assigned by FTB by default
+. Fixed turtles sometimes placing blocks with incorrect orientations
+. Fixed Wireless modems being able to send messages to themselves
+. Fixed turtle.attack() having a very short range
+. Various bugfixes
+
 New Features in ComputerCraft 1.5:
 
 . Redesigned Wireless Modems; they can now send and receive on multiple channels, independent of the computer ID. To use these features, interface with modem peripherals directly. The rednet API still functions as before

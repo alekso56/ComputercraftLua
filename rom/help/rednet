@@ -1,0 +1,15 @@
+The rednet API provides a simple computer networking model over RedPower bundled cables.
+
+Functions for specifiying sides to be used for networking:
+rednet.open( side )
+rednet.close( side )
+rednet.isOpen( side )
+
+Functions for sending messages to other computers:
+rednet.announce()
+rednet.send( receiverID, message ) -- Send to a specific computer
+rednet.broadcast( message ) -- Send to all computers
+
+Functions for receiving messages:
+rednet.receive( timeout ) -- Returns: senderID, message
+You can also handle the "rednet_message" event to receive messages without calling receive(), the arguments are the same as the receive() return values.

@@ -1,0 +1,3 @@
+print( "Goodbye" )
+sleep( 1 )
+os.reboot()

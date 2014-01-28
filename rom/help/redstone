@@ -1,0 +1,13 @@
+Functions in the Redstone API:
+redstone.getInput( side )
+redstone.setOutput( side, boolean )
+redstone.getOutput( side )
+redstone.getSides( )
+
+Functions in the Redstone API for working with RedPower bundled cables:
+redstone.getBundledInput( side )
+redstone.testBundledInput( side, color )
+redstone.setBundledOutput( side, colors )
+redstone.getBundledOutput( side )
+
+Type "help redpower" for usage examples.

@@ -1,0 +1,412 @@
+-- Get file to edit
+local tArgs = { ... }
+if #tArgs == 0 then
+	print( "Usage: edit <path>" )
+	return
+end
+
+-- Error checking
+local sPath = shell.resolve( tArgs[1] )
+local bReadOnly = fs.isReadOnly( sPath )
+if fs.exists( sPath ) and fs.isDir( sPath ) then
+	print( "Cannot edit a directory." )
+	return
+end
+
+local x,y = 1,1
+local w,h = term.getSize()
+local scrollX, scrollY = 0,0
+
+local tLines = {}
+local bRunning = true
+
+-- Menus and other small animals.
+local bMenu = false
+local nMenuItem = 1
+local tMenuItems = {"Save", "Exit"}
+local tMenuOffsets = {1, 6}
+local sStatus = "Press Ctrl to access menu"
+
+local function load(_sPath)
+	tLines = {}
+	if fs.exists( _sPath ) then
+		local file = io.open( _sPath, "r" )
+		local sLine = file:read()
+		while sLine do
+			table.insert( tLines, sLine )
+			sLine = file:read()
+		end
+		file:close()
+	end
+	
+	if #tLines == 0 then
+		table.insert( tLines, "" )
+	end
+end
+
+local function save( _sPath )
+	-- Create intervening folder
+	local sDir = sPath:sub(1, sPath:len() - fs.getName(sPath):len() )
+	if not fs.exists( sDir ) then
+		fs.makeDir( sDir )
+	end
+
+	-- Save
+	local file = nil
+	local function innerSave()
+		file = fs.open( _sPath, "w" )
+		if file then
+			for n, sLine in ipairs( tLines ) do
+				file.write( sLine .. "\n" )
+			end
+		else
+			error( "Failed to open ".._sPath )
+		end
+	end
+	
+	local ok = pcall( innerSave )
+	if file then 
+		file.close()
+	end
+	return ok
+end
+
+local function redrawText()
+	for y=1,h-1 do
+		term.setCursorPos( 1 - scrollX, y )
+		term.clearLine()
+
+		local sLine = tLines[ y + scrollY ]
+		if sLine ~= nil then
+			term.write( sLine )
+		end
+	end
+	term.setCursorPos( x - scrollX, y - scrollY )
+end
+
+local function redrawLine(_nY)
+	local sLine = tLines[_nY]
+	term.setCursorPos( 1 - scrollX, _nY - scrollY )
+	term.clearLine()
+	term.write( sLine )
+	term.setCursorPos( x - scrollX, _nY - scrollY )
+end
+
+local function setLeftStatus()
+end
+
+local function redrawMenu()
+    term.setCursorPos( 1, h )
+	term.clearLine()
+
+	local sLeft, sRight
+	if bMenu then
+		local sMenu = ""
+		for n,sItem in ipairs( tMenuItems ) do
+			if n == nMenuItem then
+				sMenu = sMenu.."["..sItem.."]"
+			else
+				sMenu = sMenu.." "..sItem.." "
+			end
+		end
+		sLeft = sMenu
+	else
+		sLeft = sStatus
+	end
+	sRight = "Ln "..y
+	
+	-- Left goes last so that it can overwrite the line numbers.
+	if sRight then
+		term.setCursorPos( w-sRight:len()+1, h )
+		term.write(sRight)
+	end
+	if sLeft then
+		term.setCursorPos( 1, h )
+		term.write(sLeft)
+	end
+	
+	-- Cursor highlights selection
+	if bMenu then
+		term.setCursorPos( tMenuOffsets[nMenuItem], h )
+	else
+		term.setCursorPos( x - scrollX, y - scrollY )
+	end
+end
+
+local tMenuFuncs = { 
+	Save=function()
+		if bReadOnly then
+			sStatus = "Access denied"
+		else
+			local ok, err = save( sPath )
+			if ok then
+				sStatus="Saved to "..sPath
+			else
+				sStatus="Error saving to "..sPath
+			end
+		end
+		redrawMenu()
+	end,
+	Exit=function()
+		bRunning = false
+	end
+}
+
+local function doMenuItem( _n )
+	tMenuFuncs[tMenuItems[_n]]()
+	if bMenu then
+		bMenu = false
+		term.setCursorBlink( true )
+	end
+	redrawMenu()
+end
+
+local function setCursor( x, y )
+	local screenX = x - scrollX
+	local screenY = y - scrollY
+	
+	local bRedraw = false
+	if screenX < 1 then
+		scrollX = x - 1
+		screenX = 1
+		bRedraw = true
+	elseif screenX > w then
+		scrollX = x - w
+		screenX = w
+		bRedraw = true
+	end
+	
+	if screenY < 1 then
+		scrollY = y - 1
+		screenY = 1
+		bRedraw = true
+	elseif screenY > h-1 then
+		scrollY = y - (h-1)
+		screenY = h-1
+		bRedraw = true
+	end
+	
+	if bRedraw then
+		redrawText()
+	end
+	term.setCursorPos( screenX, screenY )
+	-- Statusbar now pertains to menu, it would probably be safe to redraw the menu on every key event.
+	redrawMenu()
+end
+
+-- Actual program functionality begins
+load(sPath)
+
+term.clear()
+term.setCursorPos(x,y)
+term.setCursorBlink( true )
+
+redrawText()
+redrawMenu()
+
+-- Handle input
+while bRunning do
+	local sEvent, param = os.pullEvent()
+	if sEvent == "key" then
+		if param == keys.up then
+			-- Up
+			if not bMenu then
+				if y > 1 then
+					-- Move cursor up
+					y = y - 1
+					x = math.min( x, string.len( tLines[y] ) + 1 )
+					setCursor( x, y )
+				end
+			end
+		elseif param == keys.down then
+			-- Down
+			if not bMenu then
+				-- Move cursor down
+				if y < #tLines then
+					y = y + 1
+					x = math.min( x, string.len( tLines[y] ) + 1 )
+					setCursor( x, y )
+				end
+			end
+		elseif param == keys.tab then
+			-- Tab
+			if not bMenu then
+				local sLine = tLines[y]
+
+				-- Indent line
+				-- IN CASE OF INSERT TAB IN PLACE:
+				-- tLines[y] = string.sub(sLine,1,x-1) .. "  " .. string.sub(sLine,x)
+				tLines[y]='  '..tLines[y]
+				x = x + 2
+				setCursor( x, y )
+				redrawLine(y)
+			end
+		elseif param == keys.pageUp then
+			-- Page Up
+			if not bMenu then
+				-- Move up a page
+				local sx,sy=term.getSize()
+				y=y-sy-1
+				if y<1 then	y=1 end
+				x = math.min( x, string.len( tLines[y] ) + 1 )
+				setCursor( x, y )
+			end
+		elseif param == keys.pageDown then
+			-- Page Down
+			if not bMenu then
+				-- Move down a page
+				local sx,sy=term.getSize()
+				if y<#tLines-sy-1 then
+					y = y+sy-1
+				else
+					y = #tLines
+				end
+				x = math.min( x, string.len( tLines[y] ) + 1 )
+				setCursor( x, y )
+			end
+		elseif param == keys.home then
+			-- Home
+			if not bMenu then
+				-- [TODO] respect indentation here
+				-- Move cursor to the beginning
+				x=1
+				setCursor(x,y)
+			end
+		elseif param == keys["end"] then
+			-- End
+			if not bMenu then
+				-- Move cursor to the end
+				x = string.len( tLines[y] ) + 1
+				setCursor(x,y)
+			end
+		elseif param == keys.left then
+			-- Left
+			if not bMenu then
+				if x > 1 then
+					-- Move cursor left
+					x = x - 1
+				elseif x==1 and y>1 then
+					x = string.len( tLines[y-1] ) + 1
+					y = y - 1
+				end
+				setCursor( x, y )
+			else
+				-- Move menu left
+				nMenuItem = nMenuItem - 1
+				if nMenuItem < 1 then
+					nMenuItem = #tMenuItems
+				end
+				redrawMenu()
+			end
+		elseif param == keys.right then
+			-- Right
+			if not bMenu then
+				if x < string.len( tLines[y] ) + 1 then
+					-- Move cursor right
+					x = x + 1
+				elseif x==string.len( tLines[y] ) + 1 and y<#tLines then
+					x = 1
+					y = y + 1
+				end
+				setCursor( x, y )
+			else
+				-- Move menu right
+				nMenuItem = nMenuItem + 1
+				if nMenuItem > #tMenuItems then
+					nMenuItem = 1
+				end
+				redrawMenu()
+			end
+		elseif param == keys.delete then
+			-- Delete
+			if not bMenu then
+				if  x < string.len( tLines[y] ) + 1 then
+					local sLine = tLines[y]
+					tLines[y] = string.sub(sLine,1,x-1) .. string.sub(sLine,x+1)
+					redrawLine(y)
+				elseif y<#tLines then
+					tLines[y] = tLines[y] .. tLines[y+1]
+					table.remove( tLines, y+1 )
+					redrawText()
+					redrawMenu()
+				end
+			end
+		elseif param == keys.backspace then
+			-- Backspace
+			if not bMenu then
+				if x > 1 then
+					-- Remove character
+					local sLine = tLines[y]
+					tLines[y] = string.sub(sLine,1,x-2) .. string.sub(sLine,x)
+					redrawLine(y)
+			
+					x = x - 1
+					setCursor( x, y )
+				elseif y > 1 then
+					-- Remove newline
+					local sPrevLen = string.len( tLines[y-1] )
+					tLines[y-1] = tLines[y-1] .. tLines[y]
+					table.remove( tLines, y )
+					redrawText()
+				
+					x = sPrevLen + 1
+					y = y - 1
+					setCursor( x, y )
+				end
+			end
+		elseif param == keys.enter then
+			-- Enter
+			if not bMenu then
+				-- Newline
+				local sLine = tLines[y]
+				local _,spaces=string.find(sLine,"^[ ]+")
+				if not spaces then
+					spaces=0
+				end
+				tLines[y] = string.sub(sLine,1,x-1)
+				table.insert( tLines, y+1, string.rep(' ',spaces)..string.sub(sLine,x) )
+				redrawText()
+			
+				x = spaces+1
+				y = y + 1
+				setCursor( x, y )
+			else
+				-- Menu selection
+				doMenuItem( nMenuItem )
+			end
+		elseif param == keys.leftCtrl or param == keys.rightCtrl then
+			-- Menu toggle
+			bMenu = not bMenu
+			if bMenu then
+				term.setCursorBlink( false )
+				nMenuItem = 1
+			else
+				term.setCursorBlink( true )
+			end
+			redrawMenu()
+		end
+	elseif sEvent == "char" then
+		if not bMenu then
+			-- Input text
+			local sLine = tLines[y]
+			tLines[y] = string.sub(sLine,1,x-1) .. param .. string.sub(sLine,x)
+			redrawLine(y)
+		
+			x = x + string.len( param )
+			setCursor( x, y )
+		else
+			-- Select menu items
+			for n,sMenuItem in ipairs( tMenuItems ) do
+				if string.lower(string.sub(sMenuItem,1,1)) == string.lower(param) then
+					doMenuItem( n )
+					break
+				end
+			end
+		end
+	end
+end
+
+-- Cleanup
+term.clear()
+term.setCursorBlink( false )
+term.setCursorPos( 1, 1 )

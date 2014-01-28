@@ -1,0 +1,2 @@
+local nTime = os.time()
+print( "The time is "..textutils.formatTime( nTime, false ) )

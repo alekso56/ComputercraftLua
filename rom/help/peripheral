@@ -1,0 +1,8 @@
+The peripheral API is for interacting with external periphals, such as the disk drive.
+Functions in the peripheral API:
+peripheral.isPresent( side )
+peripheral.getType( side )
+peripheral.getMethods( side )
+peripheral.call( side, methodName, param1, param2, etc )
+peripheral.wrap( side )
+When new peripherals are added and removed from the computer, the events "peripheral" and "peripheral_detach" will fire, with the side as a parameter.

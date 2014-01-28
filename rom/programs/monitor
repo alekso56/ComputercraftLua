@@ -1,0 +1,31 @@
+
+function printUsage()
+	print( "Usage: monitor <side> <program> <arguments>" )
+	return
+end
+
+local tArgs = { ... }
+if #tArgs < 2 then
+	printUsage()
+	return
+end
+
+local sSide = tArgs[1]
+if peripheral.getType( sSide ) ~= "monitor" then
+	print( "No monitor on "..sSide.." side" )
+	return
+end
+
+local sProgram = tArgs[2]
+local sPath = shell.resolveProgram( sProgram )
+if sPath == nil then
+	print( "No such program: "..sProgram )
+	return
+end
+
+print( "Running "..sProgram.." on "..sSide.." monitor" )
+
+local monitor = peripheral.wrap( sSide )
+term.redirect( monitor )
+shell.run( sProgram, select( 3, ... ) )
+term.restore()

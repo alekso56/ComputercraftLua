@@ -1,0 +1,18 @@
+New Features in ComputerCraft 1.31:
+
+* Ported to Minecraft 1.2.3
+* Added Monitors (thanks to Cloudy)
+* Updated LuaJ to a newer, less memory hungry version
+* rednet_message event now has a third parameter, "distance", to support position triangulation.
+* New programs: gps, monitor, pastebin*
+* Added a secret program. Use with large monitors!
+* New apis: gps, vector
+* New turtle functions: turtle.compare(), turtle.compareUp(), turtle.compareDown(), turtle.drop( quantity )
+* New http functions: http.post()*
+* New term functonss: term.redirect(), term.restore()
+* New textutils functions: textutils.urlEncode()
+* New rednet functions: rednet.isOpen()
+* New config options: modem_range, modem_rangeDuringStorm
+* Bug fixes, program tweaks, and help updates
+
+*requires enableAPI_HTTP=1 in mod_ComputerCraft.cfg

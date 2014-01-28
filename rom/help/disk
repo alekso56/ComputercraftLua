@@ -1,0 +1,11 @@
+Functions in the Disk API. These functions are for interacting with disk drives:
+disk.isPresent( side )
+disk.hasData( side )
+disk.getMountPath( side )
+disk.setLabel( side, label )
+disk.getLabel( side )
+disk.hasAudio( side )
+disk.getAudioTitle( side )
+disk.playAudio( side )
+disk.stopAudio( )
+disk.eject( side )

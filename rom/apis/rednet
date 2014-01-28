@@ -1,0 +1,409 @@
+
+local tOpen = {}
+local tBusy = {}
+local tRoutes = {}
+local tPortPeripheral = {}
+local tValid = { left = true, right = true, top = true, bottom = true, front = true, back = true }
+
+local function portSleep( sPort, _nTime )
+	if not tOpen[sPort] then
+		return
+	end
+	
+	local t = os.startTimer( _nTime )
+	repeat
+		local e,p = os.pullEventRaw()
+		if e == "close" then
+			tOpen[sPort] = nil
+			return
+		end
+	until e == "timer" and p == t
+end
+
+local function isPortBusy( sPort )
+	return tBusy[sPort] or rs.getBundledInput( sPort ) ~= 0
+end
+
+local function sendOnPort( sPort, nClockRate, nRecipient, sMessage, nTimeout )
+
+	-- Use peripheral if present
+	local peripheral = tPortPeripheral[ sPort ]
+	if peripheral ~= nil then
+		if nRecipient ~= nil then
+			peripheral.send( nRecipient, sMessage )
+		else
+			peripheral.broadcast( sMessage )
+		end
+		return true
+	end
+	
+	-- Else, use redstone
+	local nSleep = 1 / nClockRate
+		
+	-- Offer some data
+	if nRecipient ~= nil then
+		rs.setBundledOutput( sPort, colors.black + (nRecipient + 1))
+	else
+		rs.setBundledOutput( sPort, colors.black + 0 )
+	end
+	
+	-- Wait for "data accepted"
+	local timer = nil
+	if nTimeout ~= nil then
+		timer = os.startTimer( nTimeout )
+	end
+	while not rs.testBundledInput( sPort, colors.red ) do
+		local event, p1 = os.pullEventRaw()
+		if event == "close" or
+		   event == "timer" and p1 == timer then
+			rs.setBundledOutput( sPort, 0 )
+			if nRecipient ~= nil and tRoutes[nRecipient] == sPort then
+				tRoutes[nRecipient] = nil
+			end
+			return false
+		end
+	end
+	
+	-- Remember that we can receive from this nRecipient on this port
+	if nRecipient ~= nil then
+		tRoutes[nRecipient] = sPort
+	end
+	
+	-- Start sending the data
+	rs.setBundledOutput( sPort, colors.black + 0 )
+	portSleep( sPort, nSleep * 2 )
+	
+	local lastData = nil
+	local function sendData( data )
+		if data == lastData then
+			-- Send a blank packet so the receiver sees a change
+			rs.setBundledOutput( sPort, colors.black + 0 )
+			portSleep( sPort, nSleep)
+		end
+		lastData = data
+		
+		-- Send the data
+		rs.setBundledOutput( sPort, colors.black + data )
+		portSleep( sPort, nSleep)
+	end
+	
+	-- Send our ID first
+	sendData( os.computerID() + 1 )
+	
+	-- Then send the message
+	local pendingData = nil
+	for n=1,string.len( sMessage ) do
+		-- Check for receiver disconnect
+		if not tOpen[sPort] or not rs.testBundledInput( sPort, colors.red ) then
+			rs.setBundledOutput( sPort, 0 )
+			return false
+		end
+			
+		-- Build the packet
+		local data = string.byte( sMessage, n )
+		if data < 128 then
+			if pendingData == nil then
+				pendingData = data
+			else
+				data = bit.blshift(data, 7) + pendingData
+				pendingData = nil
+				sendData( data )
+			end
+		end
+	end
+	if pendingData ~= nil then
+		sendData( pendingData )
+	end
+	
+	-- We're done
+	rs.setBundledOutput( sPort, 0 )
+	return true
+end	
+
+local function queryData( sPort )
+	-- Use peripheral if present
+	local peripheral = tPortPeripheral[ sPort ]
+	if peripheral ~= nil then
+		return false
+	end
+	
+	if rs.testBundledInput( sPort, colors.black) then
+		local wire = rs.getBundledInput( sPort )
+		local id = colors.subtract( wire, colors.black, colors.red )
+		if id == 0 or id == (os.computerID() + 1) then
+			return true
+		end
+	end
+	return false
+end
+
+local function receiveOnPort( sPort )			
+	-- Send data accepted
+	rs.setBundledOutput( sPort, colors.red )
+	
+	local function readData()
+		local back = rs.getBundledInput( sPort )
+		return colors.subtract( back, colors.black, colors.red )
+	end
+	
+	-- Wait for a zero before starting
+	local lastData = nil
+	while lastData ~= 0 do
+		lastData = readData()
+		if lastData ~= 0 then
+			os.pullEventRaw( "redstone" )
+		end
+	end
+	
+	-- Read the senders ID
+	local nSender = nil
+	while nSender == nil do
+		local data = readData()
+		if data ~= lastData then
+			nSender = data - 1
+			lastData = data
+		else
+			os.pullEventRaw( "redstone" )
+		end
+	end
+	
+	-- Remember that we can receive from this sender on this port
+	tRoutes[nSender] = sPort
+						
+	-- Pull in the damn data
+	local nStartTime = os.clock()
+	local sText = ""
+	while tOpen[sPort] and rs.testBundledInput( sPort, colors.black ) do
+		local data = readData()
+		if data ~= lastData then
+			if data > 0 then
+				local function getByte( byte )
+					if byte > 0 then
+						local char = string.char(byte)
+						sText = sText..char
+					end
+				end
+				
+				getByte( bit.band( data, 127 ) )
+				getByte( bit.band( bit.brshift(data, 7), 127 ) )
+			end
+			lastData = data
+		end
+		
+		local e = os.pullEventRaw()
+		if e == "close" then
+			tOpen[sPort] = false
+		end
+	end
+	
+	-- We're done
+	local nBitRate = (string.len(sText)) / (os.clock() - nStartTime)
+	rs.setBundledOutput( sPort, 0 )
+	
+	if tOpen[sPort] then
+		return true, nSender, sText
+	end
+	return false
+end
+			
+local function runPort( sPort, nClockRate )
+	-- Open the port
+	tOpen[sPort] = true
+	rs.setBundledOutput( sPort, 0 )
+
+	-- Locate peripheral	
+	local function findPeriph()
+		local sPeriph = peripheral.getType( sPort )
+		if sPeriph == "modem" then
+			tPortPeripheral[sPort] = peripheral.wrap( sPort )
+			tPortPeripheral[sPort].open()
+		else
+			tPortPeripheral[sPort] = nil
+		end			
+	end
+	findPeriph()
+		
+	-- Run the port until it's closed
+	while tOpen[sPort] do
+		local event, p1, p2, p3, p4 = os.pullEventRaw()
+		if event == "close" then
+			-- Close the port
+			if tPortPeripheral[sPort] ~= nil then
+				tPortPeripheral[sPort].close()
+				tPortPeripheral[sPort] = nil
+			end
+			tOpen[sPort] = nil
+			
+		elseif event == "peripheral" or event == "peripheral_detach" then
+			findPeriph()
+			
+		elseif event == "send" then
+			-- Send some text
+			local nRecipient = p2
+			local sMessage = p3
+
+			tBusy[ sPort ] = true
+			local success = sendOnPort( sPort, nClockRate, nRecipient, sMessage, 2 )
+			if success then
+				-- something?
+			end
+			tBusy[ sPort ] = false		
+			
+		else
+			-- See if there's anything to receive
+			if queryData( sPort ) then
+				tBusy[ sPort ] = true
+				local success, nSender, sMessage = receiveOnPort( sPort )
+				if success and string.len(sMessage) > 0 and nSender ~= os.computerID() then
+					os.queueEvent( "rednet_message", nSender, sMessage )
+				end
+				tBusy[ sPort ] = false
+			end
+			
+		end
+	end
+end
+
+local runRoutine = nil
+
+function run()
+	if runRoutine ~= nil then
+		error( "rednet is already running" )
+	end
+	local c = coroutine.running()
+	runRoutine = function( ... )
+		local ok, p = coroutine.resume( c, ... )
+		if not ok then
+			error( p )
+		end
+	end
+	bFinish = false
+	
+	local portRoutines = {}
+	while true do
+		local e, p1, p2, p3, p4, p5 = os.pullEventRaw()
+		if e == "timer" or e == "redstone" then
+			for n,portRoutine in pairs( portRoutines ) do
+				portRoutine( e, p1, p2, p3, p4, p5 )
+			end
+		elseif e == "open" then
+			local sSide = p1
+			if portRoutines[sSide] == nil then
+				local nClockRate = p2
+				portRoutines[sSide] = coroutine.wrap( function()
+					runPort( sSide, nClockRate )
+					portRoutines[sSide] = nil
+				end )
+				portRoutines[sSide]()
+			end
+		elseif e == "close" or e == "send" or
+		   	   e == "peripheral" or e == "peripheral_detach" then
+			local sSide = p1
+			if portRoutines[sSide] then
+				portRoutines[sSide]( e, p1, p2, p3, p4, p5 )
+			end
+		end
+	end
+
+	runRoutine = nil
+end
+
+function open( sSide, nClockRate )
+	if type( sSide ) ~= "string" then
+		error( "string expected" )
+	end
+	if not tValid[sSide] then
+		error( "Invalid side" )
+	end
+	nClockRate = math.min( nClockRate or 15, 25 )
+	if type( nClockRate ) ~= "number" or nClockRate <= 0 then
+		error( "positive number expected" )
+	end
+	runRoutine( "open", sSide, nClockRate )
+end
+
+function close( sSide )
+	if type( sSide ) ~= "string" then
+		error( "string expected" )
+	end
+	if not tValid[sSide] then
+		error( "Invalid side" )
+	end
+	runRoutine( "close", sSide )
+end
+
+function isOpen( sSide )
+	if type( sSide ) ~= "string" then
+		error( "string expected" )
+	end
+	if not tValid[sSide] then
+		error( "Invalid side" )
+	end
+	return tOpen[sSide]
+end
+
+function send( nRecipient, sMessage, bWaitUntilPortOpen )
+	if nRecipient ~= nil and (type( nRecipient ) ~= "number" or nRecipient < 0) then
+		error( "positive number expected" )
+	end
+	if type( sMessage ) ~= "string" then
+		error( "string expected" )
+	end
+	
+	local function send()
+		local sSide = nil
+		if nRecipient ~= nil then
+			sSide = tRoutes[nRecipient]
+		end
+		
+		-- Offer on the known route first
+		if sSide then
+			if tOpen[sSide] and not isPortBusy( sSide ) then
+				runRoutine( "send", sSide, nRecipient, sMessage )
+				return true
+			end
+		end
+		
+		-- Else, broadcast on all ports
+		local nPorts = 0
+		for n,sSide in ipairs( redstone.getSides() ) do
+			if tOpen[sSide] and not isPortBusy( sSide ) then
+				runRoutine( "send", sSide, nRecipient, sMessage )
+				nPorts = nPorts + 1
+			end
+		end
+		return (nPorts > 0)
+	end
+	
+	if bWaitUntilPortOpen then
+		while not send() do
+			os.pullEvent( "redstone" )
+		end
+		return true
+	else
+		return send()
+	end
+end
+
+function broadcast( sMessage, bWaitUntilPortOpen )
+	return send( nil, sMessage )
+end
+
+function announce( bWaitUntilPortOpen )
+	return broadcast( "" )
+end
+
+function receive( nTimeout )
+	local timer = nil
+	if nTimeout then
+		timer = os.startTimer( nTimeout )
+	end
+	while true do
+		local e, p1, p2, p3 = os.pullEvent()
+		if e == "rednet_message" then
+			return p1, p2, p3
+		elseif e == "timer" and p1 == timer then
+			return nil, nil, nil
+		end
+	end
+end

@@ -1,0 +1,9 @@
+The function os.pullEvent() will yield the program until a system event occurs. The first return value is the event name, followed by any arguments. Events which can occur are:
+
+"char" when text is typed on the keyboard. Argument is the letter typed.
+"key" when a key is pressed on the keyboard. Argument is the numerical keycode.
+"timer" when a timeout started by os.startTimer() completes. Argument is the value returned by startTimer().
+"alarm" when a time passed to os.setAlarm() is reached. Argument is the value returned by setAlarm().
+"redstone" when the state of any of the redstone inputs change.
+"disk" or "disk_eject" when a disk is entered or removed from an adjacent disk drive. Argument is the side.
+"rednet_message" when a message is received from the rednet API.

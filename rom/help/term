@@ -1,0 +1,11 @@
+Functions in the Terminal API:
+term.write( text )
+term.clear()
+term.clearLine()
+term.getCursorPos()
+term.setCursorPos( x, y )
+term.setCursorBlink( b )
+term.getSize()
+term.scroll( n )
+term.redirect( object )
+term.restore()

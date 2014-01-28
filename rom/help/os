@@ -1,0 +1,20 @@
+Functions in the Operating System API:
+os.version()
+os.getComputerID()
+os.getComputerLabel()
+os.setComputerLabel()
+os.run( environment, programpath, arguments )
+os.loadAPI( path )
+os.unloadAPI( name )
+os.pullEvent( filter* )
+os.queueEvent( event, arguments )
+os.clock()
+os.startTimer( timeout )
+os.sleep( timeout )
+os.time()
+os.setAlarm( time )
+os.shutdown()
+os.reboot()
+*optional
+Type "help events" to learn about the event system.
+

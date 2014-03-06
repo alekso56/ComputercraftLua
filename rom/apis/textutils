@@ -68,27 +68,15 @@ local function makePagedScroll( _term, _nFreeLines )
 end
 
 function pagedPrint( _sText, _nFreeLines )
-    -- Setup a redirector
-	local oldTerm = term.current()
-	local newTerm = {}
-	for k,v in pairs( oldTerm ) do
-	    newTerm[k] = v
-	end
-	newTerm.scroll = makePagedScroll( oldTerm, _nFreeLines )
-	term.redirect( newTerm )
-
-	-- Print the text
+	local nativeScroll = term.scroll
+	term.scroll = makePagedScroll( term, _nFreeLines )
 	local result
 	local ok, err = pcall( function()
 		result = print( _sText )
 	end )
-
-	-- Removed the redirector
-	term.redirect( oldTerm )
-
-	-- Propogate errors
+	term.scroll = nativeScroll
 	if not ok then
-		error( err, 0 )
+		error( err )
 	end
 	return result
 end

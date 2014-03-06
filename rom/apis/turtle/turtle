@@ -1,6 +1,6 @@
 
 if not turtle then
-	error( "Cannot load turtle API on computer" )
+	error( "Cannot load turtle API on computer", 2 )
 end
 native = turtle.native or turtle
 

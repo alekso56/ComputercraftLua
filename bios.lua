@@ -394,7 +394,6 @@ function os.run( _tEnv, _sPath, ... )
     end
     if err and err ~= "" then
 		printError( err )
-        printError( "bar" )
 	end
     return false
 end

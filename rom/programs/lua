@@ -37,7 +37,7 @@ while bRunning do
 	
 	local nForcePrint = 0
 	local func, e = loadstring( s, "lua" )
-	local func2, e2 = loadstring( "return _echo("..s..");", "lua" )x = 5
+	local func2, e2 = loadstring( "return _echo("..s..");", "lua" )
 	if not func then
 		if func2 then
 			func = func2

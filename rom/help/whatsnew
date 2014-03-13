@@ -4,6 +4,7 @@ New Features in ComputerCraft 1.6:
 * Added a multi-tasking system for Advanced Computers and Turtles
 * Turtles can now swap out their tools and peripherals at runtime
 * Turtles can now carry two tools or peripherals at once in any combination
+* Turtles and Computers can now be labelled using Name Tags and Anvils
 * Added a configurable fuel limit for Turtles
 * Added hostnames, protocols and long distance routing to the rednet API
 * Added a peer-to-peer chat program to demonstrate new rednet capabilities

@@ -233,23 +233,24 @@ function read( _sReplaceChar, _tHistory )
         _sReplaceChar = string.sub( _sReplaceChar, 1, 1 )
     end
     
-    local w, h = term.getSize()
-    local sx, sy = term.getCursorPos()    
+    local w = term.getSize()
+    local sx = term.getCursorPos()
     
     local function redraw( _sCustomReplaceChar )
         local nScroll = 0
         if sx + nPos >= w then
             nScroll = (sx + nPos) - w
         end
-            
-        term.setCursorPos( sx, sy )
+
+        local cx,cy = term.getCursorPos()
+        term.setCursorPos( sx, cy )
         local sReplace = _sCustomReplaceChar or _sReplaceChar
         if sReplace then
             term.write( string.rep( sReplace, string.len(sLine) - nScroll ) )
         else
             term.write( string.sub( sLine, nScroll + 1 ) )
         end
-        term.setCursorPos( sx + nPos - nScroll, sy )
+        term.setCursorPos( sx + nPos - nScroll, cy )
     end
     
     while true do
@@ -265,7 +266,7 @@ function read( _sReplaceChar, _tHistory )
             sLine = string.sub( sLine, 1, nPos ) .. param .. string.sub( sLine, nPos + 1 )
             nPos = nPos + string.len( param )
             redraw()
-            
+
         elseif sEvent == "key" then
             if param == keys.enter then
                 -- Enter
@@ -342,11 +343,18 @@ function read( _sReplaceChar, _tHistory )
                 nPos = string.len(sLine)
                 redraw()
             end
+
+        elseif sEvent == "term_resize" then
+            -- Terminal resized
+            w = term.getSize()
+            redraw()
+
         end
     end
-    
+
+    local cx, cy = term.getCursorPos()
     term.setCursorBlink( false )
-    term.setCursorPos( w + 1, sy )
+    term.setCursorPos( w + 1, cy )
     print()
     
     return sLine

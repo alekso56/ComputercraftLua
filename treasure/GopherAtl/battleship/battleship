@@ -751,15 +751,16 @@ local inChat=term.isColor()
 local savedCursorPos={7,19}
 
 --redirect just to block scroll
+local originalTerm = term.current()
 local redir={}
-for k,v in pairs(term.native) do 
+for k,v in pairs(originalTerm) do
   if k~="scroll" then
     redir[k]=v
   else
     redir[k]=function() end
   end
 end
-local originalTerm = term.redirect(redir)
+originalTerm = term.redirect(redir)
 
 --run the game routine once
 coroutine.resume(gameRoutine)

@@ -403,8 +403,8 @@ while bRunning do
 			-- Page Up
 			if not bMenu then
 				-- Move up a page
-				if y + h - 1 >= 1 then
-					y = y + h - 1
+				if y - (h - 1) >= 1 then
+					y = y - (h - 1)
 				else
 					y = 1
 				end
@@ -415,8 +415,8 @@ while bRunning do
 			-- Page Down
 			if not bMenu then
 				-- Move down a page
-				if y + h - 1 <= #tLines then
-					y = y + h - 1
+				if y + (h - 1) <= #tLines then
+					y = y + (h - 1)
 				else
 					y = #tLines
 				end

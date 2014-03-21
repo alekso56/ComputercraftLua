@@ -520,6 +520,18 @@ if turtle then
     end
 end
 
+if pocket and fs.isDir( "rom/apis/pocket" ) then
+    local tApis = fs.list( "rom/apis/pocket" )
+    for n,sFile in ipairs( tApis ) do
+        if string.sub( sFile, 1, 1 ) ~= "." then
+            local sPath = fs.combine( "rom/apis/pocket", sFile )
+            if not fs.isDir( sPath ) then
+                os.loadAPI( sPath )
+            end
+        end
+    end
+end
+
 -- Run the shell
 local ok, err = pcall( function()
     parallel.waitForAny( 

@@ -102,7 +102,7 @@ if sCommand == "host" then
                 local sEvent, timer = os.pullEvent( "timer" )
                 local nUserID = tPingPongTimer[ timer ]
                 if nUserID and tUsers[ nUserID ] then
-                    local tUser = tUsers[ nUser ]
+                    local tUser = tUsers[ nUserID ]
                     if tUser then
                         if not tUser.bPingPonged then
                             send( "* "..tUser.sUsername.." has timed out" )

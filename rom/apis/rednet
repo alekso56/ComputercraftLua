@@ -137,10 +137,12 @@ function host( sProtocol, sHostname )
     if sHostname == "localhost" then
         error( "Reserved hostname", 2 )
     end
-    if lookup( sProtocol, sHostname ) ~= nil then
-        error( "Hostname in use", 2 )
+    if tHostnames[ sProtocol ] ~= sHostname then
+        if lookup( sProtocol, sHostname ) ~= nil then
+            error( "Hostname in use", 2 )
+        end
+        tHostnames[ sProtocol ] = sHostname
     end
-    tHostnames[ sProtocol ] = sHostname
 end
 
 function unhost( sProtocol )
@@ -193,8 +195,11 @@ function lookup( sProtocol, sHostname )
         if event == "rednet_message" then
             -- Got a rednet message, check if it's the response to our request
             local nSenderID, tMessage, sMessageProtocol = p1, p2, p3
+            print( "RESPONSE FROM "..nSenderID )
             if sMessageProtocol == "dns" and tMessage.sType == "lookup response" then
+                print( "CORRECT TYPE" )
                 if tMessage.sProtocol == sProtocol then
+                    print( "CORRECT PROTOCOL" )
                     if sHostname == nil then
                         table.insert( tResults, nSenderID )
                     elseif tMessage.sHostname == sHostname then
@@ -205,7 +210,7 @@ function lookup( sProtocol, sHostname )
         else
             -- Got a timer event, check it's the end of our timeout
             if p1 == timer then
-                return nil
+                break
             end
         end
     end

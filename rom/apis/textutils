@@ -175,7 +175,7 @@ local function serializeImpl( t, tTracking, sIndent )
             for k,v in pairs(t) do
                 if not tSeen[k] then
                     local sEntry
-                    if type(k) == "string" and string.match( k, "[%a_][%a%d_]*" ) then
+                    if type(k) == "string" and string.match( k, "^[%a_][%a%d_]*$" ) then
                         sEntry = k .. " = " .. serializeImpl( v, tTracking, sSubIndent ) .. ",\n"
                     else
                         sEntry = "[ " .. serializeImpl( k, tTracking, sSubIndent ) .. " ] = " .. serializeImpl( v, tTracking, sSubIndent ) .. ",\n"

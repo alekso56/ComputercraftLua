@@ -140,7 +140,7 @@ end
 
 -- Install globals
 function sleep( nTime )
-    local timer = os.startTimer( nTime )
+    local timer = os.startTimer( nTime or 0 )
     repeat
         local sEvent, param = os.pullEvent( "timer" )
     until param == timer
@@ -246,7 +246,7 @@ function read( _sReplaceChar, _tHistory )
         term.setCursorPos( sx, cy )
         local sReplace = _sCustomReplaceChar or _sReplaceChar
         if sReplace then
-            term.write( string.rep( sReplace, string.len(sLine) - nScroll ) )
+            term.write( string.rep( sReplace, math.max( string.len(sLine) - nScroll, 0 ) ) )
         else
             term.write( string.sub( sLine, nScroll + 1 ) )
         end
@@ -496,8 +496,8 @@ end
 
 -- Install the lua part of the HTTP api (if enabled)
 if http then
-    local function wrapRequest( _url, _post )
-        local requestID = http.request( _url, _post )
+    local function wrapRequest( _url, _post, _headers )
+        http.request( _url, _post, _headers )
         while true do
             local event, param1, param2 = os.pullEvent()
             if event == "http_success" and param1 == _url then
@@ -508,12 +508,12 @@ if http then
         end        
     end
     
-    http.get = function( _url )
-        return wrapRequest( _url, nil )
+    http.get = function( _url, _headers )
+        return wrapRequest( _url, nil, _headers )
     end
 
-    http.post = function( _url, _post )
-        return wrapRequest( _url, _post or "" )
+    http.post = function( _url, _post, _headers )
+        return wrapRequest( _url, _post or "", _headers )
     end
 end
 

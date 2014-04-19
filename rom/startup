@@ -8,6 +8,9 @@ if turtle then
 	sPath = sPath..":/rom/programs/turtle"
 else
     sPath = sPath..":/rom/programs/rednet:/rom/programs/fun"
+    if term.isColor() then
+    	sPath = sPath..":/rom/programs/fun/advanced"
+    end
 end
 if pocket then
     sPath = sPath..":/rom/programs/pocket"

@@ -1,6 +1,8 @@
 
 CHANNEL_GPS = 65534
 
+local nRoundSize = (pocket and 0.01) or 1.0
+
 local function trilaterate( A, B, C )
 	local a2b = B.vPosition - A.vPosition
 	local a2c = C.vPosition - A.vPosition
@@ -31,14 +33,14 @@ local function trilaterate( A, B, C )
 		local result1 = result + (ez * z)
 		local result2 = result - (ez * z)
 		
-		local rounded1, rounded2 = result1:round( 0.01 ), result2:round( 0.01 )
+		local rounded1, rounded2 = result1:round( nRoundSize ), result2:round( nRoundSize )
 		if rounded1.x ~= rounded2.x or rounded1.y ~= rounded2.y or rounded1.z ~= rounded2.z then
 			return rounded1, rounded2
 		else
 			return rounded1
 		end
 	end
-	return result:round( 0.01 )
+	return result:round( nRoundSize )
 	
 end
 
@@ -49,9 +51,9 @@ local function narrow( p1, p2, fix )
 	if math.abs(dist1 - dist2) < 0.01 then
 		return p1, p2
 	elseif dist1 < dist2 then
-		return p1:round( 0.01 )
+		return p1:round( nRoundSize )
 	else
-		return p2:round( 0.01 )
+		return p2:round( nRoundSize )
 	end
 end
 

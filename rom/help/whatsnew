@@ -1,11 +1,5 @@
-New Features in ComputerCraft 1.63:
+New Features in ComputerCraft 1.64:
 
-* Turtles can now be painted with dyes, and cleaned with water buckets
-* Added a new game: Redirection - ComputerCraft Edition
-* Turtle label nameplates now only show when the Turtle is moused-over
-* The HTTP API is now enabled by default, and can be configured with a whitelist of permitted domains
-* http.get() and http.post() now accept parameters to control the request headers
-* New fs function: fs.getDir( path )
-* Fixed some bugs
+* Ported to Minecraft 1.7.2
 
 Type "help changelog" to see the full version history.

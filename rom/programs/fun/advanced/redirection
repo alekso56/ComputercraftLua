@@ -1,4 +1,5 @@
 --CCRedirection by : RamiLego4Game and Dan200--
+--Based on Redirection by Dan200: http://www.redirectiongame.com--
 --Clearing Screen--
 
 --Vars--
@@ -670,17 +671,16 @@ if ok then
         if TermW >= 40 then
             printCentred( TermH/2 - 1, "  Thank you for playing Redirection  " )
             printCentred( TermH/2 - 0, "  ComputerCraft Edition  " )
-            printCentred( TermH/2 + 2, "  Check out the full game on Steam:  " )
+            printCentred( TermH/2 + 2, "  Check out the full game:  " )
             term.setTextColor( colors.yellow )
-            printCentred( TermH/2 + 3, "  http://tinyurl.com/GreenlightRedirection  " )
+            printCentred( TermH/2 + 3, "  http://www.redirectiongame.com  " )
         else
             printCentred( TermH/2 - 2, "  Thank you for  " )
             printCentred( TermH/2 - 1, "  playing Redirection  " )
             printCentred( TermH/2 - 0, "  ComputerCraft Edition  " )
-            printCentred( TermH/2 + 2, "  Check us out on Steam:  " )
+            printCentred( TermH/2 + 2, "  Check out the full game:  " )
             term.setTextColor( colors.yellow )
-            printCentred( TermH/2 + 3, "  http://tinyurl.com/  " )
-            printCentred( TermH/2 + 4, "  GreenlightRedirection  " )
+            printCentred( TermH/2 + 3, "  www.redirectiongame.com  " )
         end
         parallel.waitForAll(
             function() sleep(2) end,
@@ -696,8 +696,8 @@ term.setBackgroundColor(colors.black)
 term.clear()
 if not ok then
     if err == "Terminated" then
-        print( "Vote for Redirection on Steam Greenlight:" )
-        print( "http://tinyurl.com/GreenlightRedirection" )
+        print( "Check out the full version of Redirection:" )
+        print( "http://www.redirectiongame.com" )
     else
         printError( err )
     end

@@ -1,6 +1,8 @@
 New Features in ComputerCraft 1.64:
 
-* Ported to Minecraft 1.7.2
+* Ported to Minecraft 1.7.10
+* New turtle functions: turtle.inspect(), turtle.inspectUp(), turtle.inspectDown()
+* Fixed an awful lot of bugs and crashes
 
 New Features in ComputerCraft 1.63:
 

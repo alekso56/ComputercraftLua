@@ -1,3 +1,9 @@
+New Features in ComputerCraft 1.65:
+
+* Fixed a multiplayer-only crash with turtle.place()
+* Fixed some problems with http.post()
+* Fixed fs.getDrive() returning incorrect results on remote peripherals
+
 New Features in ComputerCraft 1.64:
 
 * Ported to Minecraft 1.7.10

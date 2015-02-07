@@ -406,16 +406,17 @@ function os.run( _tEnv, _sPath, ... )
     return false
 end
 
--- Prevent access to metatables of strings, as these are global between all computers
+-- Prevent access to metatables or environments of strings, as these are global between all computers
 do
     local nativegetfenv = getfenv
     local nativegetmetatable = getmetatable
     local nativeerror = error
     local nativetype = type
-    local string_metatable = nativegetfenv(("").gsub)
+    local string_metatable = nativegetmetatable("")
+    local string_env = nativegetfenv(("").gsub)
     function getmetatable( t )
         local mt = nativegetmetatable( t )
-        if mt == string_metatable then
+        if mt == string_metatable or mt == string_env then
             nativeerror( "Attempt to access string metatable", 2 )
         else
             return mt
@@ -428,7 +429,7 @@ do
             env = env + 1
         end
         local fenv = nativegetfenv(env)
-        if fenv == string_metatable then
+        if fenv == string_metatable or fenv == string_env then
             --nativeerror( "Attempt to access string metatable", 2 )
             return nativegetfenv( 0 )
         else
@@ -451,7 +452,12 @@ function os.loadAPI( _sPath )
     local fnAPI, err = loadfile( _sPath )
     if fnAPI then
         setfenv( fnAPI, tEnv )
-        fnAPI()
+        local ok, err = pcall( fnAPI )
+        if not ok then
+            printError( err )
+            tAPIsLoading[sName] = nil
+            return false
+        end
     else
         printError( err )
         tAPIsLoading[sName] = nil
@@ -542,6 +548,7 @@ for n,sFile in ipairs( tApis ) do
 end
 
 if turtle then
+    -- Land turtle APIs
     local tApis = fs.list( "rom/apis/turtle" )
     for n,sFile in ipairs( tApis ) do
         if string.sub( sFile, 1, 1 ) ~= "." then
@@ -554,6 +561,7 @@ if turtle then
 end
 
 if pocket and fs.isDir( "rom/apis/pocket" ) then
+    -- Load pocket APIs
     local tApis = fs.list( "rom/apis/pocket" )
     for n,sFile in ipairs( tApis ) do
         if string.sub( sFile, 1, 1 ) ~= "." then
@@ -563,6 +571,38 @@ if pocket and fs.isDir( "rom/apis/pocket" ) then
             end
         end
     end
+end
+
+if commands and fs.isDir( "rom/apis/command" ) then
+    -- Land Command APIs
+    local tApis = fs.list( "rom/apis/command" )
+    for n,sFile in ipairs( tApis ) do
+        if string.sub( sFile, 1, 1 ) ~= "." then
+            local sPath = fs.combine( "rom/apis/command", sFile )
+            if not fs.isDir( sPath ) then
+                os.loadAPI( sPath )
+            end
+        end
+    end
+
+    -- Add a special case-insensitive metatable to the commands api
+    local tCaseInsensitiveIndex = {
+        __index = function( table, key )
+            local value = rawget( table, key )
+            if value ~= nil then
+                return value
+            end
+            if type(key) == "string" then
+                local value = rawget( table, string.lower(key) )
+                if value ~= nil then
+                    return value
+                end
+            end
+            return nil
+        end
+    }
+    setmetatable( commands, tCaseInsensitiveIndex )
+    setmetatable( commands.async, tCaseInsensitiveIndex )
 end
 
 -- Run the shell

@@ -1,0 +1,23 @@
+
+local tArgs = { ... }
+if not commands then
+    printError( "Requires a Command Computer." )
+    return
+end
+if #tArgs == 0 then
+    printError( "Usage: exec <command>" )
+    return
+end
+
+local sCommand = tArgs[1]
+local fnCommand = commands[sCommand]
+if fnCommand then
+    local bResult = fnCommand( select( 2, ... ) )
+    if bResult then
+        print( "Success" )
+    else
+        print( "Failed" )
+    end
+else
+    printError( "No such command" )
+end

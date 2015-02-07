@@ -1,3 +1,13 @@
+New Features in ComputerCraft 1.66:
+
+* Added Command Computers
+* Added new API: commands
+* Added new programs: commands, exec
+* Added textutils.serializeJSON()
+* Added ILuaContext.executeMainThreadTask() for peripheral developers
+* Disk Drives and Printers can be renamed with Anvils
+* Fixed some bugs and crashes
+
 New Features in ComputerCraft 1.65:
 
 * Fixed a multiplayer-only crash with turtle.place()

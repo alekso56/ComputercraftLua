@@ -123,7 +123,7 @@ end
 
 -- Install lua parts of the os api
 function os.version()
-    return "CraftOS 1.6"
+    return "CraftOS 1.7"
 end
 
 function os.pullEventRaw( sFilter )
@@ -219,6 +219,7 @@ function printError( ... )
     if term.isColour() then
         term.setTextColour( colours.red )
     end
+    local x,y = term.getCursorPos()
     print( ... )
     term.setTextColour( colours.white )
 end
@@ -537,24 +538,29 @@ if http then
 end
 
 -- Load APIs
+local bAPIError = false
 local tApis = fs.list( "rom/apis" )
 for n,sFile in ipairs( tApis ) do
     if string.sub( sFile, 1, 1 ) ~= "." then
         local sPath = fs.combine( "rom/apis", sFile )
         if not fs.isDir( sPath ) then
-            os.loadAPI( sPath )
+            if not os.loadAPI( sPath ) then
+                bAPIError = true
+            end
         end
     end
 end
 
 if turtle then
-    -- Land turtle APIs
+    -- Load turtle APIs
     local tApis = fs.list( "rom/apis/turtle" )
     for n,sFile in ipairs( tApis ) do
         if string.sub( sFile, 1, 1 ) ~= "." then
             local sPath = fs.combine( "rom/apis/turtle", sFile )
             if not fs.isDir( sPath ) then
-                os.loadAPI( sPath )
+                if not os.loadAPI( sPath ) then
+                    bAPIError = true
+                end
             end
         end
     end
@@ -567,42 +573,45 @@ if pocket and fs.isDir( "rom/apis/pocket" ) then
         if string.sub( sFile, 1, 1 ) ~= "." then
             local sPath = fs.combine( "rom/apis/pocket", sFile )
             if not fs.isDir( sPath ) then
-                os.loadAPI( sPath )
+                if not os.loadAPI( sPath ) then
+                    bAPIError = true
+                end
             end
         end
     end
 end
 
 if commands and fs.isDir( "rom/apis/command" ) then
-    -- Land Command APIs
-    local tApis = fs.list( "rom/apis/command" )
-    for n,sFile in ipairs( tApis ) do
-        if string.sub( sFile, 1, 1 ) ~= "." then
-            local sPath = fs.combine( "rom/apis/command", sFile )
-            if not fs.isDir( sPath ) then
-                os.loadAPI( sPath )
-            end
-        end
-    end
-
-    -- Add a special case-insensitive metatable to the commands api
-    local tCaseInsensitiveIndex = {
-        __index = function( table, key )
-            local value = rawget( table, key )
-            if value ~= nil then
-                return value
-            end
-            if type(key) == "string" then
-                local value = rawget( table, string.lower(key) )
+    -- Load command APIs
+    if os.loadAPI( "rom/apis/command/commands" ) then
+        -- Add a special case-insensitive metatable to the commands api
+        local tCaseInsensitiveMetatable = {
+            __index = function( table, key )
+                local value = rawget( table, key )
                 if value ~= nil then
                     return value
                 end
+                if type(key) == "string" then
+                    local value = rawget( table, string.lower(key) )
+                    if value ~= nil then
+                        return value
+                    end
+                end
+                return nil
             end
-            return nil
-        end
-    }
-    setmetatable( commands, tCaseInsensitiveIndex )
-    setmetatable( commands.async, tCaseInsensitiveIndex )
+        }
+        setmetatable( commands, tCaseInsensitiveMetatable )
+        setmetatable( commands.async, tCaseInsensitiveMetatable )
+    else
+        bAPIError = true
+    end
+end
+
+if bAPIError then
+    print( "Press any key to continue" )
+    os.pullEvent( "key" )
+    term.clear()
+    term.setCursorPos( 1,1 )
 end
 
 -- Run the shell

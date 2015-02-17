@@ -24,8 +24,8 @@ for k,v in pairs( native ) do
 end
 
 -- Create wrapper functions for all the commands
-local tCommands = native.list()
 local tAsync = {}
+local tCommands = native.list()
 for n,sCommandName in ipairs(tCommands) do
     if env[ sCommandName ] == nil then
         env[ sCommandName ] = function( ... )

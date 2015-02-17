@@ -1,12 +1,14 @@
-New Features in ComputerCraft 1.66:
+New Features in ComputerCraft 1.7:
 
 * Added Command Computers
 * Added new API: commands
 * Added new programs: commands, exec
 * Added textutils.serializeJSON()
 * Added ILuaContext.executeMainThreadTask() for peripheral developers
-* Disk Drives and Printers can be renamed with Anvils
-* Fixed some bugs and crashes
+* Disk Drives and Printers can now be renamed with Anvils
+* Fixed various bugs, crashes and exploits
+* Fixed problems with HD texture packs
+* Documented the new features in the in-game help
 
 New Features in ComputerCraft 1.65:
 

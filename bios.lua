@@ -602,6 +602,9 @@ if commands and fs.isDir( "rom/apis/command" ) then
         }
         setmetatable( commands, tCaseInsensitiveMetatable )
         setmetatable( commands.async, tCaseInsensitiveMetatable )
+
+        -- Add global "exec" function
+        exec = commands.exec
     else
         bAPIError = true
     end

@@ -6,4 +6,11 @@ end
 
 local tCommands = commands.list()
 table.sort( tCommands )
+
+if term.isColor() then
+    term.setTextColor( colors.green )
+end
+print( "Available commands:" )
+term.setTextColor( colors.white )
+
 textutils.pagedTabulate( tCommands )

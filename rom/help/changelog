@@ -1,3 +1,7 @@
+New Features in ComputerCraft 1.71:
+
+* The "exec" program, commands.exec() and all related Command Computer functions now return the console output of the command.
+
 New Features in ComputerCraft 1.7:
 
 * Added Command Computers

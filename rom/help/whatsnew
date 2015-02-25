@@ -1,13 +1,5 @@
-New Features in ComputerCraft 1.7:
+New Features in ComputerCraft 1.71:
 
-* Added Command Computers
-* Added new API: commands
-* Added new programs: commands, exec
-* Added textutils.serializeJSON()
-* Added ILuaContext.executeMainThreadTask() for peripheral developers
-* Disk Drives and Printers can now be renamed with Anvils
-* Fixed problems with HD texture packs
-* Fixed various bugs, crashes and exploits
-* Documented the new features in the in-game help
+* The "exec" program, commands.exec() and all related Command Computer functions now return the console output of the command.
 
 Type "help changelog" to see the full version history.

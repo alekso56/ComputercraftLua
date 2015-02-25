@@ -1,6 +1,6 @@
-New Features in ComputerCraft 1.71:
+New Features in ComputerCraft 1.73:
 
 * The "exec" program, commands.exec() and all related Command Computer functions now return the console output of the command.
-* Fixed a multiplayer crash bug.
+* Fixed two multiplayer crash bugs.
 
 Type "help changelog" to see the full version history.

@@ -230,7 +230,7 @@ while #tProcesses > 0 do
         resizeWindows()
         redrawMenu()
 
-    elseif sEvent == "char" or sEvent == "key" or sEvent == "paste" or sEvent == "terminate" then
+    elseif sEvent == "char" or sEvent == "key" or sEvent == "key_up" or sEvent == "paste" or sEvent == "terminate" then
         -- Keyboard event
         -- Passthrough to current process
         resumeProcess( nCurrentProcess, unpack( tEventData ) )
@@ -263,7 +263,7 @@ while #tProcesses > 0 do
             end
         end
 
-    elseif sEvent == "mouse_drag" or sEvent == "mouse_scroll" then
+    elseif sEvent == "mouse_drag" or sEvent == "mouse_up" or sEvent == "mouse_scroll" then
         -- Other mouse event
         local p1, x, y = tEventData[2], tEventData[3], tEventData[4]
         if not (bShowMenu and y == 1) then

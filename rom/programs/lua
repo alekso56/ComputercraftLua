@@ -31,8 +31,17 @@ while bRunning do
 	--end
 	write( "lua> " )
 	--term.setTextColour( colours.white )
-	
-	local s = read( nil, tCommandHistory )
+
+	local s = read( nil, tCommandHistory, function( sLine )
+	    local nStartPos = string.find( sLine, "[a-zA-Z0-9_%.]+$" )
+	    if nStartPos then
+	        sLine = string.sub( sLine, nStartPos )
+	    end
+	    if #sLine > 0 then
+            return textutils.complete( sLine, tEnv )
+        end
+        return nil
+	end )
 	table.insert( tCommandHistory, s )
 	
 	local nForcePrint = 0

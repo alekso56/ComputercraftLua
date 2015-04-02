@@ -1,112 +1,4 @@
 
---[[
--- Install safe versions of various library functions
--- These will not put cfunctions on the stack, so don't break serialisation
-xpcall = function( _fn, _fnErrorHandler )
-    local typeT = type( _fn )
-    assert( typeT == "function", "bad argument #1 to xpcall (function expected, got "..typeT..")" )
-    local co = coroutine.create( _fn )
-    local tResults = { coroutine.resume( co ) }
-    while coroutine.status( co ) ~= "dead" do
-        tResults = { coroutine.resume( co, coroutine.yield() ) }
-    end
-    if tResults[1] == true then
-        return true, unpack( tResults, 2 )
-    else
-        return false, _fnErrorHandler( tResults[2] )
-    end
-end
-
-pcall = function( _fn, ... )
-    local typeT = type( _fn )
-    assert( typeT == "function", "bad argument #1 to pcall (function expected, got "..typeT..")" )
-    local tArgs = { ... }
-    return xpcall( 
-        function()
-            return _fn( unpack( tArgs ) )
-        end,
-        function( _error )
-            return _error
-        end
-    )
-end
-
-function pairs( _t )
-    local typeT = type( _t )
-    if typeT ~= "table" then
-        error( "bad argument #1 to pairs (table expected, got "..typeT..")", 2 )
-    end
-    return next, _t, nil
-end
-
-function ipairs( _t )
-    local typeT = type( _t )
-    if typeT ~= "table" then
-        error( "bad argument #1 to ipairs (table expected, got "..typeT..")", 2 )
-    end
-    return function( t, var )
-        var = var + 1
-        local value = t[var] 
-        if value == nil then
-            return
-        end
-        return var, value
-    end, _t, 0
-end
-
-function coroutine.wrap( _fn )
-    local typeT = type( _fn )
-    if typeT ~= "function" then
-        error( "bad argument #1 to coroutine.wrap (function expected, got "..typeT..")", 2 )
-    end
-    local co = coroutine.create( _fn )
-    return function( ... )
-        local tResults = { coroutine.resume( co, ... ) }
-        if tResults[1] then
-            return unpack( tResults, 2 )
-        else
-            error( tResults[2], 2 )
-        end
-    end
-end
-
-function string.gmatch( _s, _pattern )
-    local type1 = type( _s )
-    if type1 ~= "string" then
-        error( "bad argument #1 to string.gmatch (string expected, got "..type1..")", 2 )
-    end
-    local type2 = type( _pattern )
-    if type2 ~= "string" then
-        error( "bad argument #2 to string.gmatch (string expected, got "..type2..")", 2 )
-    end
-    
-    local nPos = 1
-    return function()
-        local nFirst, nLast = string.find( _s, _pattern, nPos )
-        if nFirst == nil then
-            return
-        end        
-        nPos = nLast + 1
-        return string.match( _s, _pattern, nFirst )
-    end
-end
-
-local nativesetmetatable = setmetatable
-function setmetatable( _o, _t )
-    if _t and type(_t) == "table" then
-        local idx = rawget( _t, "__index" )
-        if idx and type( idx ) == "table" then
-            rawset( _t, "__index", function( t, k ) return idx[k] end )
-        end
-        local newidx = rawget( _t, "__newindex" )
-        if newidx and type( newidx ) == "table" then
-            rawset( _t, "__newindex", function( t, k, v ) newidx[k] = v end )
-        end
-    end
-    return nativesetmetatable( _o, _t )
-end
-]]
-
 -- Install fix for luaj's broken string.sub/string.find
 local nativestringfind = string.find
 local nativestringsub = string.sub
@@ -224,7 +116,7 @@ function printError( ... )
     term.setTextColour( colours.white )
 end
 
-function read( _sReplaceChar, _tHistory )
+function read( _sReplaceChar, _tHistory, _fnComplete )
     term.setCursorBlink( true )
 
     local sLine = ""
@@ -233,11 +125,27 @@ function read( _sReplaceChar, _tHistory )
     if _sReplaceChar then
         _sReplaceChar = string.sub( _sReplaceChar, 1, 1 )
     end
-    
+
+    local tCompletions
+    local nCompletion
+    local function recomplete()
+        if _fnComplete and nPos == string.len(sLine) then
+            tCompletions = _fnComplete( sLine )
+            if tCompletions and #tCompletions > 0 then
+                nCompletion = 1
+            else
+                nCompletion = nil
+            end
+        else
+            tCompletions = nil
+            nCompletion = nil
+        end
+    end
+
     local w = term.getSize()
     local sx = term.getCursorPos()
-    
-    local function redraw( _sCustomReplaceChar )
+
+    local function redraw( _bClear )
         local nScroll = 0
         if sx + nPos >= w then
             nScroll = (sx + nPos) - w
@@ -245,53 +153,144 @@ function read( _sReplaceChar, _tHistory )
 
         local cx,cy = term.getCursorPos()
         term.setCursorPos( sx, cy )
-        local sReplace = _sCustomReplaceChar or _sReplaceChar
+        local sReplace = (_bClear and " ") or _sReplaceChar
         if sReplace then
             term.write( string.rep( sReplace, math.max( string.len(sLine) - nScroll, 0 ) ) )
         else
             term.write( string.sub( sLine, nScroll + 1 ) )
         end
+
+        if nCompletion then
+            local sCompletion = tCompletions[ nCompletion ]
+            local oldText, oldBg
+            if not _bClear then
+                oldText = term.getTextColor()
+                oldBg = term.getBackgroundColor()
+                term.setTextColor( colours.white )
+                term.setBackgroundColor( colours.grey )
+            end
+            if sReplace then
+                term.write( string.rep( sReplace, string.len( sCompletion ) ) )
+            else
+                term.write( sCompletion )
+            end
+            if not _bClear then
+                term.setTextColor( oldText )
+                term.setBackgroundColor( oldBg )
+            end
+        end
+
         term.setCursorPos( sx + nPos - nScroll, cy )
     end
     
+    local function clear()
+        redraw( true )
+    end
+
+    recomplete()
+    redraw()
+
+    local function acceptCompletion()
+        if nCompletion then
+            -- Clear
+            clear()
+
+            -- Find the common prefix of all the other suggestions which start with the same letter as the current one
+            local sCompletion = tCompletions[ nCompletion ]
+            local sFirstLetter = string.sub( sCompletion, 1, 1 )
+            local sCommonPrefix = sCompletion
+            for n=1,#tCompletions do
+                local sResult = tCompletions[n]
+                if n ~= nCompletion and string.find( sResult, sFirstLetter, 1, true ) == 1 then
+                    while #sCommonPrefix > 1 do
+                        if string.find( sResult, sCommonPrefix, 1, true ) == 1 then
+                            break
+                        else
+                            sCommonPrefix = string.sub( sCommonPrefix, 1, #sCommonPrefix - 1 )
+                        end
+                    end
+                end
+            end
+
+            -- Append this string
+            sLine = sLine .. sCommonPrefix
+            nPos = string.len( sLine )
+            recomplete()
+            redraw()
+        end
+    end
     while true do
         local sEvent, param = os.pullEvent()
         if sEvent == "char" then
             -- Typed key
+            clear()
             sLine = string.sub( sLine, 1, nPos ) .. param .. string.sub( sLine, nPos + 1 )
             nPos = nPos + 1
+            recomplete()
             redraw()
 
         elseif sEvent == "paste" then
             -- Pasted text
+            clear()
             sLine = string.sub( sLine, 1, nPos ) .. param .. string.sub( sLine, nPos + 1 )
             nPos = nPos + string.len( param )
+            recomplete()
             redraw()
 
         elseif sEvent == "key" then
             if param == keys.enter then
                 -- Enter
+                if nCompletion then
+                    clear()
+                    tCompletions = nil
+                    nCompletion = nil
+                    redraw()
+                end
                 break
                 
             elseif param == keys.left then
                 -- Left
                 if nPos > 0 then
+                    clear()
                     nPos = nPos - 1
+                    recomplete()
                     redraw()
                 end
                 
             elseif param == keys.right then
                 -- Right                
                 if nPos < string.len(sLine) then
-                    redraw(" ")
+                    -- Move right
+                    clear()
                     nPos = nPos + 1
+                    recomplete()
                     redraw()
+                else
+                    -- Accept autocomplete
+                    acceptCompletion()
                 end
-            
+
             elseif param == keys.up or param == keys.down then
                 -- Up or down
-                if _tHistory then
-                    redraw(" ")
+                if nCompletion then
+                    -- Cycle completions
+                    clear()
+                    if param == keys.up then
+                        nCompletion = nCompletion - 1
+                        if nCompletion < 1 then
+                            nCompletion = #tCompletions
+                        end
+                    elseif param == keys.down then
+                        nCompletion = nCompletion + 1
+                        if nCompletion > #tCompletions then
+                            nCompletion = 1
+                        end
+                    end
+                    redraw()
+
+                elseif _tHistory then
+                    -- Cycle history
+                    clear()
                     if param == keys.up then
                         -- Up
                         if nHistoryPos == nil then
@@ -316,33 +315,52 @@ function read( _sReplaceChar, _tHistory )
                         sLine = ""
                         nPos = 0
                     end
+                    recomplete()
                     redraw()
+
                 end
+
             elseif param == keys.backspace then
                 -- Backspace
                 if nPos > 0 then
-                    redraw(" ")
+                    clear()
                     sLine = string.sub( sLine, 1, nPos - 1 ) .. string.sub( sLine, nPos + 1 )
-                    nPos = nPos - 1                    
+                    nPos = nPos - 1
+                    recomplete()
                     redraw()
                 end
+
             elseif param == keys.home then
                 -- Home
-                redraw(" ")
-                nPos = 0
-                redraw()        
+                if nPos > 0 then
+                    clear()
+                    nPos = 0
+                    recomplete()
+                    redraw()
+                end
+
             elseif param == keys.delete then
                 -- Delete
                 if nPos < string.len(sLine) then
-                    redraw(" ")
+                    clear()
                     sLine = string.sub( sLine, 1, nPos ) .. string.sub( sLine, nPos + 2 )                
+                    recomplete()
                     redraw()
                 end
+
             elseif param == keys["end"] then
                 -- End
-                redraw(" ")
-                nPos = string.len(sLine)
-                redraw()
+                if nPos < string.len(sLine ) then
+                    clear()
+                    nPos = string.len(sLine)
+                    recomplete()
+                    redraw()
+                end
+
+            elseif param == keys.tab then
+                -- Tab (accept autocomplete)
+                acceptCompletion()
+
             end
 
         elseif sEvent == "term_resize" then
@@ -387,7 +405,6 @@ function os.run( _tEnv, _sPath, ... )
     local fnFile, err = loadfile( _sPath )
     if fnFile then
         local tEnv = _tEnv
-        --setmetatable( tEnv, { __index = function(t,k) return _G[k] end } )
         setmetatable( tEnv, { __index = _G } )
         setfenv( fnFile, tEnv )
         local ok, err = pcall( function()

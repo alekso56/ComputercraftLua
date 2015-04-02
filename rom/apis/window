@@ -268,7 +268,7 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
 
     local function setTextColor( color )
         if not parent.isColor() then
-            if color ~= colors.white and color ~= colors.black then
+            if color ~= colors.white and color ~= colors.black and color ~= colors.gray and color ~= colors.lightGray then
                 error( "Colour not supported", 3 )
             end
         end
@@ -326,6 +326,22 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
                 updateCursorPos()
             end
         end
+    end
+
+    function window.getTextColor()
+        return nTextColor
+    end
+
+    function window.getTextColour()
+        return nTextColor
+    end
+
+    function window.getBackgroundColor()
+        return nBackgroundColor
+    end
+
+    function window.getBackgroundColour()
+        return nBackgroundColor
     end
 
     -- Other functions

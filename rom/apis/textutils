@@ -223,11 +223,11 @@ local function serializeImpl( t, tTracking, sIndent )
     end
 end
 
-EMPTY_ARRAY = {}
+empty_json_array = {}
 
 local function serializeJSONImpl( t, tTracking )
     local sType = type(t)
-    if t == EMPTY_ARRAY then
+    if t == empty_json_array then
         return "[]"
 
     elseif sType == "table" then
@@ -317,6 +317,57 @@ function urlEncode( str )
         str = string.gsub(str, " ", "+")
     end
     return str    
+end
+
+local tEmpty = {}
+function complete( sSearchText, tSearchTable )
+    local nStart = 1
+    local nDot = string.find( sSearchText, ".", nStart, true )
+    local tTable = tSearchTable or getfenv( 1 )
+    while nDot do
+        local sPart = string.sub( sSearchText, nStart, nDot - 1 )
+        local value = tTable[ sPart ]
+        if type( value ) == "table" then
+            tTable = value
+            nStart = nDot + 1
+            nDot = string.find( sSearchText, ".", nStart, true )
+        else
+            return tEmpty
+        end
+    end
+
+    local sPart = string.sub( sSearchText, nStart, nDot )
+    local nPartLength = string.len( sPart )
+
+    local tResults = {}
+    local tSeen = {}
+    while tTable do
+        for k,v in pairs( tTable ) do
+            if not tSeen[k] and type(k) == "string" then
+                if string.find( k, sPart, 1, true ) == 1 then
+                    if not g_tLuaKeywords[k] and string.match( k, "^[%a_][%a%d_]*$" ) then
+                        local sResult = string.sub( k, nPartLength + 1 )
+                        if type(v) == "function" then
+                            sResult = sResult .. "("
+                        elseif type(v) == "table" and next(v) ~= nil then
+                            sResult = sResult .. "."
+                        end
+                        table.insert( tResults, sResult )
+                    end
+                end
+            end
+            tSeen[k] = true
+        end
+        local tMetatable = getmetatable( tTable )
+        if tMetatable and type( tMetatable.__index ) == "table" then
+            tTable = tMetatable.__index
+        else
+            tTable = nil
+        end
+    end
+
+    table.sort( tResults )
+    return tResults
 end
 
 -- GB versions

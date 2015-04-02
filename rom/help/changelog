@@ -4,6 +4,7 @@ New Features in ComputerCraft 1.74:
 * Added textutils.complete(), and a completion function parameter to read().
 * Added "key_up" and "mouse_up" events.
 * Non-advanced terminals now accept both grey colours.
+* Added term.getTextColour() and term.getBackgroundColour()
 * Added a "Run" button to the edit program on Advanced terminals.
 * Turtles now respect server spawn protection (configurable).
 * Added a turtle permissions API for mod authors.

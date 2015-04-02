@@ -10,6 +10,8 @@ setCursorBlink( blink )
 isColor()
 setTextColor( color )
 setBackgroundColor( color )
+getTextColor()
+getBackgroundColor()
 getSize()
 scroll( n )
 

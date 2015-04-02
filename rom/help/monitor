@@ -1,4 +1,5 @@
 monitor will connect to an attached Monitor peripheral, and run a program on its display.
+Type "help monitors" for help using monitors as peripherals in lua programs.
 
 ex:
 "monitor left hello" will run the "hello" program on the monitor to the left of the computer.

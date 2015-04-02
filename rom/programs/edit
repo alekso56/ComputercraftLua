@@ -678,7 +678,7 @@ while bRunning do
 
 			end
 
-		elseif param == keys.leftCtrl or param == keys.rightCtrl then
+		elseif param == keys.leftCtrl or param == keys.rightCtrl or param == keys.rightAlt then
 			-- Menu toggle
 			bMenu = not bMenu
 			if bMenu then
@@ -722,7 +722,7 @@ while bRunning do
 				local cx,cy = param2, param3
 				if cy < h then
 					local newY = math.min( math.max( scrollY + cy, 1 ), #tLines )
-					local newX = math.min( math.max( scrollX + cx, 1 ), string.len( tLines[y] ) + 1 )
+					local newX = math.min( math.max( scrollX + cx, 1 ), string.len( tLines[newY] ) + 1 )
 					setCursor( newX, newY )
 				end
 			end

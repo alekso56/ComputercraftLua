@@ -1,15 +1,18 @@
 New Features in ComputerCraft 1.74:
 
-* Added tab-completion to the "edit" and "lua" programs.
-* Added textutils.complete(), and a completion function parameter to read().
+* Added tab-completion to "edit", "lua" and the shell.
+* Added textutils.complete(), fs.complete(), shell.complete() and shell.setCompletionFunction().
+* Added an autocomplete parameters to read().
 * Added "key_up" and "mouse_up" events.
 * Non-advanced terminals now accept both grey colours.
-* Added term.getTextColour() and term.getBackgroundColour()
-* Added a "Run" button to the edit program on Advanced terminals.
+* Added term.getTextColour(), term.getBackgroundColour() and term.blit().
+* Improved the performance of text rendering on Advanced Computers.
+* Added a "Run" button to the edit program on Advanced Computers.
 * Turtles now respect server spawn protection (configurable).
 * Added a turtle permissions API for mod authors.
 * Command Computers can no longer be broken by survival players.
 * Fixed the "pick block" key not working on ComputerCraft items in creative mode.
+* Fixed the "edit" program being hard to use on certain European keyboards.
 * Added a "_CCVERSION" constant.
 
 New Features in ComputerCraft 1.73:

@@ -15,6 +15,7 @@ fs.copy( path, path )
 fs.delete( path )
 fs.combine( path, localpath )
 fs.open( path, mode )
+fs.complete( path, location )
 Available fs.open() modes are "r", "w", "a", "rb", "wb" and "ab".
 
 Functions on files opened with mode "r":

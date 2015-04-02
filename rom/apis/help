@@ -23,7 +23,10 @@ function lookup( _sTopic )
 end
 
 function topics()
-	local tItems = {}
+    -- Add index
+	local tItems = {
+	    [ "index" ] = true
+	}
 	
 	-- Add topics from the path
     for sPath in string.gmatch(sPath, "[^:]+") do
@@ -47,3 +50,17 @@ function topics()
 	table.sort( tItemList )
 	return tItemList
 end
+
+function completeTopic( sText )
+    local tTopics = topics()
+    local tResults = {}
+    for n=1,#tTopics do
+        local sTopic = tTopics[n]
+        if #sTopic > #sText and string.sub( sTopic, 1, #sText ) == sText then
+            table.insert( tResults, string.sub( sTopic, #sText + 1 ) )
+        end
+    end
+	return tResults
+end
+
+

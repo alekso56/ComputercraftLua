@@ -2,6 +2,7 @@ The Monitor is a peripheral device available for CraftOS. Type "help peripheral"
 
 Methods exposed by the Monitor:
 write( text )
+blit( text, textColor, backgroundColor )
 clear()
 clearLine()
 getCursorPos()

@@ -1,4 +1,23 @@
 
+local tHex = {
+    [ colors.white ] = "f",
+    [ colors.orange ] = "e",
+    [ colors.magenta ] = "d",
+    [ colors.lightBlue ] = "c",
+    [ colors.yellow ] = "b",
+    [ colors.lime ] = "a",
+    [ colors.pink ] = "9",
+    [ colors.gray ] = "8",
+    [ colors.lightGray ] = "7",
+    [ colors.cyan ] = "6",
+    [ colors.purple ] = "5",
+    [ colors.blue ] = "4",
+    [ colors.brown ] = "3",
+    [ colors.green ] = "2",
+    [ colors.red ] = "1",
+    [ colors.black ] = "0",
+}
+
 function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
 
     if type( parent ) ~= "table" or
@@ -21,12 +40,17 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
     local bCursorBlink = false
     local nTextColor = colors.white
     local nBackgroundColor = colors.black
-    local sEmpty = string.rep( " ", nWidth )
     local tLines = {}
     do
-        local tEmpty = { { sEmpty, nTextColor, nBackgroundColor } }
+        local sEmptyText = string.rep( " ", nWidth )
+        local sEmptyTextColor = string.rep( tHex[ nTextColor ], nWidth )
+        local sEmptyBackgroundColor = string.rep( tHex[ nBackgroundColor ], nWidth )
         for y=1,nHeight do
-            tLines[y] = tEmpty
+            tLines[y] = {
+                text = sEmptyText,
+                textColor = sEmptyTextColor,
+                backgroundColor = sEmptyBackgroundColor,
+            }
         end
     end
 
@@ -49,97 +73,9 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
     end
     
     local function redrawLine( n )
-        parent.setCursorPos( nX, nY + n - 1 )
         local tLine = tLines[ n ]
-        for m=1,#tLine do
-            local tBit = tLine[ m ]
-            parent.setTextColor( tBit[2] )
-            parent.setBackgroundColor( tBit[3] )
-            parent.write( tBit[1] )
-        end
-    end
-
-    local function lineLen( tLine )
-        local nLength = 0
-        for n=1,#tLine do
-            nLength = nLength + string.len( tLine[n][1] )
-        end
-        return nLength
-    end
-
-    local function lineSub( tLine, nStart, nEnd )
-        --assert( math.floor(nStart) == nStart )
-        --assert( math.floor(nEnd) == nEnd )
-        --assert( nStart >= 1 )
-        --assert( nEnd >= nStart )
-        --assert( nEnd <= lineLen( tLine ) )
-        local tSubLine = {}
-        local nBitStart = 1
-        for n=1,#tLine do
-            local tBit = tLine[n]
-            local sBit = tBit[1]
-            local nBitEnd = nBitStart + string.len( sBit ) - 1
-            if nBitEnd >= nStart and nBitStart <= nEnd then
-                if nBitStart >= nStart and nBitEnd <= nEnd then
-                    -- Include bit wholesale
-                    table.insert( tSubLine, tBit )
-                    --assert( lineLen( tSubLine ) == (math.min(nEnd, nBitEnd) - nStart + 1) )
-                elseif nBitStart < nStart and nBitEnd <= nEnd then
-                    -- Include end of bit
-                    table.insert( tSubLine, {
-                        string.sub( sBit, nStart - nBitStart + 1 ),
-                        tBit[2], tBit[3]
-                    } )
-                    --assert( lineLen( tSubLine ) == (math.min(nEnd, nBitEnd) - nStart + 1) )
-                elseif nBitStart >= nStart and nBitEnd > nEnd then
-                    -- Include beginning of bit
-                    table.insert( tSubLine, {
-                        string.sub( sBit, 1, nEnd - nBitStart + 1 ),
-                        tBit[2], tBit[3]
-                    } )
-                    --assert( lineLen( tSubLine ) == (math.min(nEnd, nBitEnd) - nStart + 1) )
-                else
-                    -- Include middle of bit
-                    table.insert( tSubLine, {
-                        string.sub( sBit, nStart - nBitStart + 1, nEnd - nBitStart + 1 ),
-                        tBit[2], tBit[3]
-                    } )
-                    --assert( lineLen( tSubLine ) == (math.min(nEnd, nBitEnd) - nStart + 1) )
-                end
-            end
-            nBitStart = nBitEnd + 1
-        end
-        --assert( lineLen( tSubLine ) == (nEnd - nStart + 1) )
-        return tSubLine
-    end
-
-    local function lineJoin( tLine1, tLine2 )
-        local tNewLine = {}
-        if tLine1[#tLine1][2] == tLine2[1][2] and
-           tLine1[#tLine1][3] == tLine2[1][3] then
-            -- Merge middle bits
-            for n=1,#tLine1-1 do
-                table.insert( tNewLine, tLine1[n] )
-            end
-            table.insert( tNewLine, {
-                tLine1[#tLine1][1] .. tLine2[1][1],
-                tLine2[1][2], tLine2[1][3]
-            } )
-            for n=2,#tLine2 do
-                table.insert( tNewLine, tLine2[n] )
-            end
-            --assert( lineLen( tNewLine ) == lineLen(tLine1) + lineLen(tLine2) )
-        else
-            -- Just concatenate
-            for n=1,#tLine1 do
-                table.insert( tNewLine, tLine1[n] )
-            end
-            for n=1,#tLine2 do
-                table.insert( tNewLine, tLine2[n] )
-            end
-            --assert( lineLen( tNewLine ) == lineLen(tLine1) + lineLen(tLine2) )
-        end
-        return tNewLine
+        parent.setCursorPos( nX, nY + n - 1 )
+        parent.blit( tLine.text, tLine.textColor, tLine.backgroundColor )
     end
 
     local function redraw()
@@ -152,56 +88,129 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
 
     -- Terminal implementation
     function window.write( sText )
+        sText = tostring( sText )
         local nLen = string.len( sText )
         local nStart = nCursorX
         local nEnd = nStart + nLen - 1
         if nCursorY >= 1 and nCursorY <= nHeight then
-            -- Work out where to put new line
-            --assert( math.floor(nStart) == nStart )
-            --assert( math.floor(nEnd) == nEnd )
             if nStart <= nWidth and nEnd >= 1 then
-                -- Construct new line
+                -- Modify line
                 local tLine = tLines[ nCursorY ]
                 if nStart == 1 and nEnd == nWidth then
-                    -- Exactly replace line
-                    tLine = {
-                        { sText, nTextColor, nBackgroundColor }
-                    }
-                    --assert( lineLen( tLine ) == nWidth )
-                elseif nStart <= 1 and nEnd >= nWidth then
-                    -- Overwrite line with subset
-                    tLine = {
-                        { string.sub( sText, 1 - nStart + 1, nWidth - nStart + 1 ), nTextColor, nBackgroundColor }
-                    }
-                    --assert( lineLen( tLine ) == nWidth )
-                elseif nStart <= 1 then
-                    -- Overwrite beginning of line
-                    tLine = lineJoin(
-                        { { string.sub( sText, 1 - nStart + 1 ), nTextColor, nBackgroundColor } },
-                        lineSub( tLine, nEnd + 1, nWidth )
-                    )
-                    --assert( lineLen( tLine ) == nWidth )
-                elseif nEnd >= nWidth then
-                    -- Overwrite end of line
-                    tLine = lineJoin(
-                        lineSub( tLine, 1, nStart - 1 ),
-                        { { string.sub( sText, 1, nWidth - nStart + 1 ), nTextColor, nBackgroundColor } }
-                    )
-                    --assert( lineLen( tLine ) == nWidth )
+                    tLine.text = sText
+                    tLine.textColor = string.rep( tHex[ nTextColor ], nWidth )
+                    tLine.backgroundColor = string.rep( tHex[ nBackgroundColor ], nWidth )
                 else
-                    -- Overwrite middle of line
-                    tLine = lineJoin(
-                        lineJoin(
-                            lineSub( tLine, 1, nStart - 1 ),
-                            { { sText, nTextColor, nBackgroundColor } }
-                        ),
-                        lineSub( tLine, nEnd + 1, nWidth )
-                    )
-                    --assert( lineLen( tLine ) == nWidth )
+                    local sNewText, sNewTextColor, sNewBackgroundColor
+                    if nStart > 1 then
+                        sNewText = string.sub( tLine.text, 1, nStart - 1 )
+                        sNewTextColor = string.sub( tLine.textColor, 1, nStart - 1 )
+                        sNewBackgroundColor = string.sub( tLine.backgroundColor, 1, nStart - 1 )
+                    else
+                        sNewText = ""
+                        sNewTextColor = ""
+                        sNewBackgroundColor = ""
+                    end
+                    local sClippedText
+                    if nStart < 1 and nEnd > nWidth then
+                        sClippedText = string.sub( sText, 1 - nStart + 1, nWidth - nStart + 1 )
+                    elseif nStart < 1 then
+                        sClippedText = string.sub( sText, 1 - nStart + 1 )
+                    elseif nEnd > nWidth then
+                        sClippedText = string.sub( sText, 1, nWidth - nStart + 1 )
+                    else
+                        sClippedText = sText
+                    end
+                    sNewText = sNewText .. sClippedText
+                    sNewTextColor = sNewTextColor .. string.rep( tHex[ nTextColor ], #sClippedText )
+                    sNewBackgroundColor = sNewBackgroundColor .. string.rep( tHex[ nBackgroundColor ], #sClippedText )
+                    if nEnd < nWidth then
+                        sNewText = sNewText .. string.sub( tLine.text, nEnd + 1, nWidth )
+                        sNewTextColor = sNewTextColor .. string.sub( tLine.textColor, nEnd + 1, nWidth )
+                        sNewBackgroundColor = sNewBackgroundColor .. string.sub( tLine.backgroundColor, nEnd + 1, nWidth )
+                    end
+                    tLine.text = sNewText
+                    tLine.textColor = sNewTextColor
+                    tLine.backgroundColor = sNewBackgroundColor
                 end
 
-                -- Store and redraw new line
-                tLines[ nCursorY ] = tLine
+                -- Redraw line
+                if bVisible then
+                    redrawLine( nCursorY )
+                end
+            end
+        end
+
+        -- Move and redraw cursor
+        nCursorX = nEnd + 1
+        if bVisible then
+            updateCursorColor()
+            updateCursorPos()
+        end
+    end
+
+    function window.blit( sText, sTextColor, sBackgroundColor )
+        if type(sText) ~= "string" or type(sTextColor) ~= "string" or type(sBackgroundColor) ~= "string" then
+            error( "Expected string, string, string", 2 )
+        end
+        if #sTextColor ~= #sText or #sBackgroundColor ~= #sText then
+            error( "Arguments must be the same length", 2 )
+        end
+
+        local nLen = string.len( sText )
+        local nStart = nCursorX
+        local nEnd = nStart + nLen - 1
+        if nCursorY >= 1 and nCursorY <= nHeight then
+            if nStart <= nWidth and nEnd >= 1 then
+                -- Modify line
+                local tLine = tLines[ nCursorY ]
+                if nStart == 1 and nEnd == nWidth then
+                    tLine.text = sText
+                    tLine.textColor = sTextColor
+                    tLine.backgroundColor = sBackgroundColor
+                else
+                    local sNewText, sNewTextColor, sNewBackgroundColor
+                    if nStart > 1 then
+                        sNewText = string.sub( tLine.text, 1, nStart - 1 )
+                        sNewTextColor = string.sub( tLine.textColor, 1, nStart - 1 )
+                        sNewBackgroundColor = string.sub( tLine.backgroundColor, 1, nStart - 1 )
+                    else
+                        sNewText = ""
+                        sNewTextColor = ""
+                        sNewBackgroundColor = ""
+                    end
+                    local sClippedText, sClippedTextColor, sClippedBackgroundColor
+                    if nStart < 1 and nEnd > nWidth then
+                        sClippedText = string.sub( sText, 1 - nStart + 1, nWidth - nStart + 1 )
+                        sClippedTextColor = string.sub( sTextColor, 1 - nStart + 1, nWidth - nStart + 1 )
+                        sClippedBackgroundColor = string.sub( sBackgroundColor, 1 - nStart + 1, nWidth - nStart + 1 )
+                    elseif nStart < 1 then
+                        sClippedText = string.sub( sText, 1 - nStart + 1 )
+                        sClippedTextColor = string.sub( sTextColor, 1 - nStart + 1 )
+                        sClippedBackgroundColor = string.sub( sBackgroundColor, 1 - nStart + 1 )
+                    elseif nEnd > nWidth then
+                        sClippedText = string.sub( sText, 1, nWidth - nStart + 1 )
+                        sClippedTextColor = string.sub( sClippedTextColor, 1, nWidth - nStart + 1 )
+                        sClippedBackgroundColor = string.sub( sClippedBackgroundColor, 1, nWidth - nStart + 1 )
+                    else
+                        sClippedText = sText
+                        sClippedTextColor = sTextColor
+                        sClippedBackgroundColor = sBackgroundColor
+                    end
+                    sNewText = sNewText .. sClippedText
+                    sNewTextColor = sNewTextColor .. sClippedTextColor
+                    sNewBackgroundColor = sNewBackgroundColor .. sClippedBackgroundColor
+                    if nEnd < nWidth then
+                        sNewText = sNewText .. string.sub( tLine.text, nEnd + 1, nWidth )
+                        sNewTextColor = sNewTextColor .. string.sub( tLine.textColor, nEnd + 1, nWidth )
+                        sNewBackgroundColor = sNewBackgroundColor .. string.sub( tLine.backgroundColor, nEnd + 1, nWidth )
+                    end
+                    tLine.text = sNewText
+                    tLine.textColor = sNewTextColor
+                    tLine.backgroundColor = sNewBackgroundColor
+                end
+
+                -- Redraw line
                 if bVisible then
                     redrawLine( nCursorY )
                 end
@@ -217,9 +226,15 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
     end
 
     function window.clear()
-        local tEmpty = { { sEmpty, nTextColor, nBackgroundColor } }
+        local sEmptyText = string.rep( " ", nWidth )
+        local sEmptyTextColor = string.rep( tHex[ nTextColor ], nWidth )
+        local sEmptyBackgroundColor = string.rep( tHex[ nBackgroundColor ], nWidth )
         for y=1,nHeight do
-            tLines[y] = tEmpty
+            tLines[y] = {
+                text = sEmptyText,
+                textColor = sEmptyTextColor,
+                backgroundColor = sEmptyBackgroundColor,
+            }
         end
         if bVisible then
             redraw()
@@ -230,7 +245,14 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
 
     function window.clearLine()
         if nCursorY >= 1 and nCursorY <= nHeight then
-            tLines[ nCursorY ] = { { sEmpty, nTextColor, nBackgroundColor } }
+            local sEmptyText = string.rep( " ", nWidth )
+            local sEmptyTextColor = string.rep( tHex[ nTextColor ], nWidth )
+            local sEmptyBackgroundColor = string.rep( tHex[ nBackgroundColor ], nWidth )
+            tLines[ nCursorY ] = {
+                text = sEmptyText,
+                textColor = sEmptyTextColor,
+                backgroundColor = sEmptyBackgroundColor,
+            }
             if bVisible then
                 redrawLine( nCursorY )
                 updateCursorColor()
@@ -263,13 +285,13 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
     end
 
     function window.isColour()
-        return parent.isColor()
+        return parent.isColour()
     end
 
     local function setTextColor( color )
         if not parent.isColor() then
             if color ~= colors.white and color ~= colors.black and color ~= colors.gray and color ~= colors.lightGray then
-                error( "Colour not supported", 3 )
+                error( "Color not supported", 3 )
             end
         end
         nTextColor = color
@@ -288,8 +310,8 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
 
     local function setBackgroundColor( color )
         if not parent.isColor() then
-            if color ~= colors.white and color ~= colors.black then
-                error( "Colour not supported", 3 )
+            if color ~= colors.white and color ~= colors.black and color ~= colors.gray and color ~= colors.lightGray then
+                error( "Color not supported", 3 )
             end
         end
         nBackgroundColor = color
@@ -310,13 +332,19 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
     function window.scroll( n )
         if n ~= 0 then
             local tNewLines = {}
-            local tEmpty = { { sEmpty, nTextColor, nBackgroundColor } }
+            local sEmptyText = string.rep( " ", nWidth )
+            local sEmptyTextColor = string.rep( tHex[ nTextColor ], nWidth )
+            local sEmptyBackgroundColor = string.rep( tHex[ nBackgroundColor ], nWidth )
             for newY=1,nHeight do
                 local y = newY + n
                 if y >= 1 and y <= nHeight then
                     tNewLines[newY] = tLines[y]
                 else
-                    tNewLines[newY] = tEmpty
+                    tNewLines[newY] = {
+                        text = sEmptyText,
+                        textColor = sEmptyTextColor,
+                        backgroundColor = sEmptyBackgroundColor,
+                    }
                 end
             end
             tLines = tNewLines
@@ -379,19 +407,33 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
         nX = nNewX
         nY = nNewY
         if nNewWidth and nNewHeight then
-            sEmpty = string.rep( " ", nNewWidth )
             local tNewLines = {}
-            local tEmpty = { { sEmpty, nTextColor, nBackgroundColor } }
+            local sEmptyText = string.rep( " ", nWidth )
+            local sEmptyTextColor = string.rep( tHex[ nTextColor ], nWidth )
+            local sEmptyBackgroundColor = string.rep( tHex[ nBackgroundColor ], nWidth )
             for y=1,nNewHeight do
                 if y > nHeight then
-                    tNewLines[y] = tEmpty
+                    tNewLines[y] = {
+                        text = sEmptyText,
+                        textColor = sEmptyTextColor,
+                        backgroundColor = sEmptyBackgroundColor
+                    }
                 else
+                    local tOldLine = tLines[y]
                     if nNewWidth == nWidth then
-                        tNewLines[y] = tLines[y]
+                        tNewLines[y] = tOldLine
                     elseif nNewWidth < nWidth then
-                        tNewLines[y] = lineSub( tLines[y], 1, nNewWidth )
+                        tNewLines[y] = {
+                            text = string.sub( tOldLine.text, 1, nNewWidth ),
+                            textColor = string.sub( tOldLine.textColor, 1, nNewWidth ),
+                            backgroundColor = string.sub( tOldLine.backgroundColor, 1, nNewWidth ),
+                        }
                     else
-                        tNewLines[y] = lineJoin( tLines[y], { { string.sub( sEmpty, nWidth + 1, nNewWidth ), nTextColor, nBackgroundColor } } )
+                        tNewLines[y] = {
+                            text = tOldLine.text .. string.sub( sEmptyText, 1, nWidth + 1, nNewWidth ),
+                            textColor = tOldLine.textColor .. string.sub( sEmptyTextColor, 1, nWidth + 1, nNewWidth ),
+                            backgroundColor = tOldLine.backgroundColor .. string.sub( sEmptyBackgroundColor, 1, nWidth + 1, nNewWidth ),
+                        }
                     end
                 end
             end

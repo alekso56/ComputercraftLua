@@ -3,6 +3,7 @@ window.create( parent, x, y, width, height, visible )
 
 Windows created with the window API have the following methods:
 write( text )
+blit( text, textColor, backgroundColor )
 clear()
 clearLine()
 getCursorPos()

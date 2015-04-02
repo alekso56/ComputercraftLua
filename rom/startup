@@ -38,6 +38,58 @@ if term.isColor() then
     shell.setAlias( "foreground", "fg" )
 end
 
+-- Setup completion functions
+local function completeFile( shell, nIndex, sText )
+    if nIndex == 1 then
+        return fs.complete( sText, shell.dir(), true, false )
+    end
+end
+local function completeDir( shell, nIndex, sText )
+    if nIndex == 1 then
+        return fs.complete( sText, shell.dir(), false, true )
+    end
+end
+local function completeEither( shell, nIndex, sText )
+    if nIndex == 1 then
+        return fs.complete( sText, shell.dir(), true, true )
+    end
+end
+local function completeEitherEither( shell, nIndex, sText )
+    if nIndex == 1 then
+        local tResults = fs.complete( sText, shell.dir(), true, true )
+        for n=1,#tResults do
+            local sResult = tResults[n]
+            if string.sub( sResult, #sResult, #sResult ) ~= "/" then
+                tResults[n] = sResult .. " "
+            end
+        end
+        return tResults
+    elseif nIndex == 2 then
+        return fs.complete( sText, shell.dir(), true, true )
+    end
+end
+local function completeProgram( shell, nIndex, sText )
+    if nIndex == 1 then
+        return shell.completeProgram( sText )
+    end
+end
+local function completeHelp( shell, nIndex, sText )
+    if nIndex == 1 then
+        return help.completeTopic( sText )
+    end
+end
+shell.setCompletionFunction( "rom/programs/cd", completeDir )
+shell.setCompletionFunction( "rom/programs/copy", completeEitherEither )
+shell.setCompletionFunction( "rom/programs/delete", completeEither )
+shell.setCompletionFunction( "rom/programs/edit", completeFile )
+shell.setCompletionFunction( "rom/programs/help", completeHelp )
+shell.setCompletionFunction( "rom/programs/list", completeDir )
+shell.setCompletionFunction( "rom/programs/move", completeEitherEither )
+shell.setCompletionFunction( "rom/programs/rename", completeEitherEither )
+shell.setCompletionFunction( "rom/programs/advanced/bg", completeProgram )
+shell.setCompletionFunction( "rom/programs/advanced/fg", completeProgram )
+shell.setCompletionFunction( "rom/programs/fun/advanced/paint", completeFile )
+
 -- Run autorun files
 if fs.exists( "/rom/autorun" ) and fs.isDir( "/rom/autorun" ) then
 	local tFiles = fs.list( "/rom/autorun" )

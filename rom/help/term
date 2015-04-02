@@ -1,5 +1,6 @@
 Functions in the Terminal API:
 term.write( text )
+term.blit( text, textColor, backgroundColor )
 term.clear()
 term.clearLine()
 term.getCursorPos()

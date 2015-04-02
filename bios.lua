@@ -2,12 +2,17 @@
 -- Install fix for luaj's broken string.sub/string.find
 local nativestringfind = string.find
 local nativestringsub = string.sub
+local nativepcall = pcall
 function string.sub( ... )
-    local r = nativestringsub( ... )
-    if r then
-        return r .. ""
+    local ok, r = nativepcall( nativestringsub, ... )
+    if ok then
+        if r then
+            return r .. ""
+        end
+        return nil
+    else
+        error( r, 2 )
     end
-    return nil
 end
 function string.find( s, ... )
     return nativestringfind( s .. "", ... );
@@ -553,6 +558,66 @@ if http then
         return ok, err
     end
 end
+
+-- Install the lua part of the FS api
+local tEmpty = {}
+function fs.complete( sPath, sLocation, bIncludeFiles, bIncludeDirs )
+    bIncludeFiles = (bIncludeFiles ~= false)
+    bIncludeDirs = (bIncludeDirs ~= false)
+    local sDir = sLocation
+    local nStart = 1
+    local nSlash = string.find( sPath, "[/\\]", nStart )
+    if nSlash == 1 then
+        sDir = ""
+        nStart = 2
+    end
+    local sName
+    while not sName do
+        local nSlash = string.find( sPath, "[/\\]", nStart )
+        if nSlash then
+            local sPart = string.sub( sPath, nStart, nSlash - 1 )
+            sDir = fs.combine( sDir, sPart )
+            nStart = nSlash + 1
+        else
+            sName = string.sub( sPath, nStart )
+        end
+    end
+
+    if fs.isDir( sDir ) then
+        local tResults = {}
+        if bIncludeDirs and sPath == "" then
+            table.insert( tResults, "." )
+        end
+        if sDir ~= "" then
+            if sPath == "" then
+                table.insert( tResults, (bIncludeDirs and "..") or "../" )
+            elseif sPath == "." then
+                table.insert( tResults, (bIncludeDirs and ".") or "./" )
+            end
+        end
+        local tFiles = fs.list( sDir )
+        for n=1,#tFiles do
+            local sFile = tFiles[n]
+            if #sFile >= #sName and string.sub( sFile, 1, #sName ) == sName then
+                local bIsDir = fs.isDir( fs.combine( sDir, sFile ) )
+                local sResult = string.sub( sFile, #sName + 1 )
+                if bIsDir then
+                    table.insert( tResults, sResult .. "/" )
+                    if bIncludeDirs and #sResult > 0 then
+                        table.insert( tResults, sResult )
+                    end
+                else
+                    if bIncludeFiles and #sResult > 0 then
+                        table.insert( tResults, sResult )
+                    end
+                end
+            end
+        end
+        return tResults
+    end
+    return tEmpty
+end
+
 
 -- Load APIs
 local bAPIError = false

@@ -11,6 +11,7 @@ local bExit = false
 local sDir = (parentShell and parentShell.dir()) or ""
 local sPath = (parentShell and parentShell.path()) or ".:/rom/programs"
 local tAliases = (parentShell and parentShell.aliases()) or {}
+local tCompletionInfo = (parentShell and parentShell.getCompletionInfo()) or {}
 local tProgramStack = {}
 
 local shell = {}
@@ -146,7 +147,8 @@ function shell.programs( _bIncludeHidden )
     	sPath = shell.resolve( sPath )
 		if fs.isDir( sPath ) then
 			local tList = fs.list( sPath )
-			for n,sFile in pairs( tList ) do
+            for n=1,#tList do
+                local sFile = tList[n]
 				if not fs.isDir( fs.combine( sPath, sFile ) ) and
 				   (_bIncludeHidden or string.sub( sFile, 1, 1 ) ~= ".") then
 					tItems[ sFile ] = true
@@ -162,6 +164,100 @@ function shell.programs( _bIncludeHidden )
 	end
 	table.sort( tItemList )
 	return tItemList
+end
+
+local function completeProgram( sLine )
+	if string.sub( sLine, 1, 1 ) == "/" then
+	    -- Add programs from the root
+	    return fs.complete( sLine, "", true, false )
+
+    else
+        local tResults = {}
+        local tSeen = {}
+
+        -- Add aliases
+        for sAlias, sCommand in pairs( tAliases ) do
+            if #sAlias > #sLine and string.sub( sAlias, 1, #sLine ) == sLine then
+                local sResult = string.sub( sAlias, #sLine + 1 )
+                if not tSeen[ sResult ] then
+                    table.insert( tResults, sResult )
+                    tSeen[ sResult ] = true
+                end
+            end
+        end
+
+        -- Add programs from the path
+        local tPrograms = shell.programs()
+        for n=1,#tPrograms do
+            local sProgram = tPrograms[n]
+            if #sProgram > #sLine and string.sub( sProgram, 1, #sLine ) == sLine then
+                local sResult = string.sub( sProgram, #sLine + 1 )
+                if not tSeen[ sResult ] then
+                    table.insert( tResults, sResult )
+                    tSeen[ sResult ] = true
+                end
+            end
+        end
+
+        -- Sort and return
+        table.sort( tResults )
+        return tResults
+    end
+end
+
+local function completeProgramArgument( sProgram, nArgument, sLine )
+    local tInfo = tCompletionInfo[ sProgram ]
+    if tInfo then
+        return tInfo.fnComplete( shell, nArgument, sLine )
+    end
+    return nil
+end
+
+function shell.complete( sLine )
+    if #sLine > 0 then
+        local tWords = tokenise( sLine )
+        local nIndex = #tWords
+        if string.sub( sLine, #sLine, #sLine ) == " " then
+            nIndex = nIndex + 1
+        end
+        if nIndex == 1 then
+            local sBit = tWords[1] or ""
+            local sPath = shell.resolveProgram( sBit )
+            if tCompletionInfo[ sPath ] then
+                return { " " }
+            else
+                local tResults = completeProgram( sBit )
+                for n=1,#tResults do
+                    local sResult = tResults[n]
+                    local sPath = shell.resolveProgram( sBit .. sResult )
+                    if tCompletionInfo[ sPath ] then
+                        tResults[n] = sResult .. " "
+                    end
+                end
+                return tResults
+            end
+
+        elseif nIndex > 1 then
+            local sPath = shell.resolveProgram( tWords[1] )
+            return completeProgramArgument( sPath , nIndex - 1, tWords[nIndex] or "" )
+
+        end
+    end
+	return nil
+end
+
+function shell.completeProgram( sProgram )
+    return completeProgram( sProgram )
+end
+
+function shell.setCompletionFunction( sProgram, fnComplete )
+    tCompletionInfo[ sProgram ] = {
+        fnComplete = fnComplete
+    }
+end
+
+function shell.getCompletionInfo()
+    return tCompletionInfo
 end
 
 function shell.getRunningProgram()
@@ -180,7 +276,7 @@ function shell.clearAlias( _sCommand )
 end
 
 function shell.aliases()
-	-- Add aliases
+	-- Copy aliases
 	local tCopy = {}
 	for sAlias, sCommand in pairs( tAliases ) do
 		tCopy[sAlias] = sCommand
@@ -237,7 +333,7 @@ else
         write( shell.dir() .. "> " )
         term.setTextColour( textColour )
 
-        local sLine = read( nil, tCommandHistory )
+        local sLine = read( nil, tCommandHistory, shell.complete )
         table.insert( tCommandHistory, sLine )
         shell.run( sLine )
     end

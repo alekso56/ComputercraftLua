@@ -1,8 +1,8 @@
 New Features in ComputerCraft 1.74:
 
-* Added tab-completion to "edit", "lua" and the shell.
-* Added textutils.complete(), fs.complete(), shell.complete() and shell.setCompletionFunction().
-* Added an autocomplete parameters to read().
+* Added tab completion to "edit", "lua" and the shell.
+* Added textutils.complete(), fs.complete(), shell.complete(), shell.setCompletionFunction() and help.complete().
+* Added tab completion options to read().
 * Added "key_up" and "mouse_up" events.
 * Non-advanced terminals now accept both grey colours.
 * Added term.getTextColour(), term.getBackgroundColour() and term.blit().

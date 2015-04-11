@@ -190,8 +190,8 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
                         sClippedBackgroundColor = string.sub( sBackgroundColor, 1 - nStart + 1 )
                     elseif nEnd > nWidth then
                         sClippedText = string.sub( sText, 1, nWidth - nStart + 1 )
-                        sClippedTextColor = string.sub( sClippedTextColor, 1, nWidth - nStart + 1 )
-                        sClippedBackgroundColor = string.sub( sClippedBackgroundColor, 1, nWidth - nStart + 1 )
+                        sClippedTextColor = string.sub( sTextColor, 1, nWidth - nStart + 1 )
+                        sClippedBackgroundColor = string.sub( sBackgroundColor, 1, nWidth - nStart + 1 )
                     else
                         sClippedText = sText
                         sClippedTextColor = sTextColor

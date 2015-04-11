@@ -162,7 +162,7 @@ end
 local tCompletions
 local nCompletion
 
-local tCompleteEnv = getfenv()
+local tCompleteEnv = _ENV
 local function complete( sLine )
     local nStartPos = string.find( sLine, "[a-zA-Z0-9_%.]+$" )
     if nStartPos then
@@ -380,7 +380,7 @@ local tMenuFuncs = {
             end
             fs.delete( sTempPath )
         else
-            sStatus="Error saving to "..sPath
+            sStatus="Error saving to "..sTempPath
         end
 		redrawMenu()
     end

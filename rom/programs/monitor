@@ -29,7 +29,7 @@ local monitor = peripheral.wrap( sName )
 local previousTerm = term.redirect( monitor )
 
 local co = coroutine.create( function()
-    shell.run( sProgram, unpack( tArgs, 3 ) )
+    shell.run( sProgram, table.unpack( tArgs, 3 ) )
 end )
 
 local function resume( ... )
@@ -45,11 +45,11 @@ local ok, param = pcall( function()
 	while coroutine.status( co ) ~= "dead" do
 		local tEvent = { os.pullEventRaw() }
 		if sFilter == nil or tEvent[1] == sFilter or tEvent[1] == "terminate" then
-			sFilter = resume( unpack( tEvent ) )
+			sFilter = resume( table.unpack( tEvent ) )
 		end
 		if coroutine.status( co ) ~= "dead" and (sFilter == nil or sFilter == "mouse_click") then
 			if tEvent[1] == "monitor_touch" and tEvent[2] == sName then
-				sFilter = resume( "mouse_click", 1, unpack( tEvent, 3 ) )
+				sFilter = resume( "mouse_click", 1, table.unpack( tEvent, 3 ) )
 			end
 		end
 		if coroutine.status( co ) ~= "dead" and (sFilter == nil or sFilter == "term_resize") then

@@ -57,7 +57,7 @@ local function launchProcess( tProgramEnv, sProgramPath, ... )
         tProcess.window = window.create( parentTerm, 1, 1, w, h, false )
     end
     tProcess.co = coroutine.create( function()
-        os.run( tProgramEnv, sProgramPath, unpack( tProgramArgs ) )
+        os.run( tProgramEnv, sProgramPath, table.unpack( tProgramArgs ) )
         if not tProcess.bInteracted then
             term.setCursorBlink( false )
             print( "Press any key to continue" )
@@ -233,7 +233,7 @@ while #tProcesses > 0 do
     elseif sEvent == "char" or sEvent == "key" or sEvent == "key_up" or sEvent == "paste" or sEvent == "terminate" then
         -- Keyboard event
         -- Passthrough to current process
-        resumeProcess( nCurrentProcess, unpack( tEventData ) )
+        resumeProcess( nCurrentProcess, table.unpack( tEventData ) )
         if cullProcess( nCurrentProcess ) then
             setMenuVisible( #tProcesses >= 2 )
             redrawMenu()
@@ -280,7 +280,7 @@ while #tProcesses > 0 do
         -- Passthrough to all processes
         local nLimit = #tProcesses -- Storing this ensures any new things spawned don't get the event
         for n=1,nLimit do
-            resumeProcess( n, unpack( tEventData ) )
+            resumeProcess( n, table.unpack( tEventData ) )
         end
         if cullProcesses() then
             setMenuVisible( #tProcesses >= 2 )

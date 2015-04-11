@@ -50,7 +50,7 @@ for k,v in pairs( native ) do
 	end
 end
 	
-local env = getfenv()
+local env = _ENV
 for k,v in pairs( term ) do
 	env[k] = v
 end

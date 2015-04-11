@@ -16,7 +16,7 @@ local tEnv = {
 	    return ...
 	end,
 }
-setmetatable( tEnv, { __index = getfenv() } )
+setmetatable( tEnv, { __index = _ENV } )
 
 if term.isColour() then
 	term.setTextColour( colours.yellow )
@@ -45,8 +45,8 @@ while bRunning do
 	table.insert( tCommandHistory, s )
 	
 	local nForcePrint = 0
-	local func, e = loadstring( s, "lua" )
-	local func2, e2 = loadstring( "return _echo("..s..");", "lua" )
+	local func, e = load( s, "lua", "t", tEnv )
+	local func2, e2 = load( "return _echo("..s..");", "lua", "t", tEnv )
 	if not func then
 		if func2 then
 			func = func2
@@ -60,7 +60,6 @@ while bRunning do
 	end
 	
 	if func then
-        setfenv( func, tEnv )
         local tResults = { pcall( func ) }
         if tResults[1] then
         	local n = 1

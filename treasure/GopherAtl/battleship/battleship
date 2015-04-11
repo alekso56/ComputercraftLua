@@ -202,7 +202,7 @@ end
  
 local function drawShipsToGrid(ships,grid)  
   for i=1,#ships do
-    local x,y=unpack(ships[i].pos)
+    local x,y=table.unpack(ships[i].pos)
     local stepX=ships[i].dir=="h" and 1 or 0
     local stepY=stepX==1 and 0 or 1
     for j=1,ships[i].size do

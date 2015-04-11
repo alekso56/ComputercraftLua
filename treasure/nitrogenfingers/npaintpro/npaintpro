@@ -416,8 +416,8 @@ function calculateMaterials()
 		for y = toplim, botlim do
 			for x = leflim, riglim do
 				if type(frames[i][y][x]) == "number" then
-					requiredMaterials[math.log10(frames[i][y][x])/math.log10(2) + 1] = 
-						requiredMaterials[math.log10(frames[i][y][x])/math.log10(2) + 1] + 1
+					requiredMaterials[math.log(frames[i][y][x],10)/math.log(2,10) + 1] =
+						requiredMaterials[math.log(frames[i][y][x],10)/math.log(2,10) + 1] + 1
 				end	
 			end
 		end

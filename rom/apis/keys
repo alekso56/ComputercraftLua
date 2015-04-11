@@ -49,7 +49,7 @@ local tKeys = {
 	"delete"														-- 211
 }
 
-local keys = getfenv()
+local keys = _ENV
 for nKey, sKey in pairs( tKeys ) do
 	keys[sKey] = nKey
 end

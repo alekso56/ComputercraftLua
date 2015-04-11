@@ -114,5 +114,5 @@ function find( sType, fnFilter )
 			end
 		end
 	end
-	return unpack( tResults )
+	return table.unpack( tResults )
 end

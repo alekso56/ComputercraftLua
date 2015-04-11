@@ -621,7 +621,7 @@ function doCommand( text )
 				if #tCaptures == 1 and tCaptures[1] == sMatch then
 					fnCommand()
 				else
-					fnCommand( unpack( tCaptures ) )
+					fnCommand( table.unpack( tCaptures ) )
 				end
 				return
 			end

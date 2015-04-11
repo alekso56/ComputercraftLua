@@ -174,7 +174,7 @@ function lookup( sProtocol, sHostname )
 
     if not isOpen() then
         if tResults then
-            return unpack( tResults )
+            return table.unpack( tResults )
         end
         return nil
     end
@@ -212,7 +212,7 @@ function lookup( sProtocol, sHostname )
         end
     end
     if tResults then
-        return unpack( tResults )
+        return table.unpack( tResults )
     end
     return nil
 end

@@ -18,7 +18,7 @@ local function collapseArgs( errorDepth, arg1, ... )
 end
 
 -- Put native functions into the environment
-local env = getfenv()
+local env = _ENV
 for k,v in pairs( native ) do
     env[k] = v
 end

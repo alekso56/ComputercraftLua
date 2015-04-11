@@ -615,13 +615,10 @@ languages.lua.keywords = {
 	["sleep"] = "function",
 	["pairs"] = "function",
 	["ipairs"] = "function",
-	["loadstring"] = "function",
+	["load"] = "function",
 	["loadfile"] = "function",
-	["dofile"] = "function",
 	["rawset"] = "function",
 	["rawget"] = "function",
-	["setfenv"] = "function",
-	["getfenv"] = "function",
 }
 
 languages.lua.parseError = function(e)
@@ -645,7 +642,7 @@ end
 
 languages.lua.getCompilerErrors = function(code)
 	code = "local function ee65da6af1cb6f63fee9a081246f2fd92b36ef2(...)\n\n" .. code .. "\n\nend"
-	local fn, err = loadstring(code)
+	local fn, err = load(code)
 	if not err then
 		local _, e = pcall(fn)
 		if e then err = e end
@@ -661,10 +658,9 @@ languages.lua.getCompilerErrors = function(code)
 end
 
 languages.lua.run = function(path, ar)
-	local fn, err = loadfile(path)
-	setfenv(fn, getfenv())
+	local fn, err = loadfile(path, _ENV)
 	if not err then
-		_, err = pcall(function() fn(unpack(ar)) end)
+		_, err = pcall(function() fn(table.unpack(ar)) end)
 	end
 	return err
 end

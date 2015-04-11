@@ -186,7 +186,6 @@ shell.setCompletionFunction( "rom/programs/advanced/bg", completeProgram )
 shell.setCompletionFunction( "rom/programs/advanced/fg", completeProgram )
 shell.setCompletionFunction( "rom/programs/fun/dj", completeDJ )
 shell.setCompletionFunction( "rom/programs/fun/advanced/paint", completeFile )
-shell.setCompletionFunction( "rom/programs/fun/advanced/paint", completeFile )
 shell.setCompletionFunction( "rom/programs/http/pastebin", completePastebin )
 shell.setCompletionFunction( "rom/programs/rednet/chat", completeChat )
 

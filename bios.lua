@@ -1,4 +1,65 @@
 
+local nativesetfenv = setfenv
+local nativegetfenv = getfenv
+if _VERSION == "Lua 5.1" then
+    -- Install parts of the Lua 5.2 API so that programs can be written against it now
+    local nativeload = load
+    local nativeloadstring = loadstring
+    function load( x, name, mode, env )
+        if mode ~= nil and mode ~= "t" then
+            error( "Binary chunk loading prohibited", 2 )
+        end
+        if type(x) == "string" then
+            local result, err = nativeloadstring( x, name )
+            if result then
+                if env then
+                    env._ENV = env
+                    nativesetfenv( result, env )
+                end
+                return result
+            else
+                return nil, err
+            end
+        else
+            local result, err = nativeload( x, name )
+            if result then
+                if env then
+                    env._ENV = env
+                    nativesetfenv( result, env )
+                end
+                return result
+            else
+                return nil, err
+            end
+        end
+    end
+    table.unpack = unpack
+    table.pack = function( ... ) return { ... } end
+
+    local nativebit = bit
+    bit32 = {}
+    bit32.arshift = nativebit.brshift
+    bit32.band = nativebit.band
+    bit32.bnot = nativebit.bnot
+    bit32.bor = nativebit.bor
+    bit32.btest = function( a, b ) return nativebit.band(a,b) ~= 0 end
+    bit32.bxor = nativebit.bxor
+    bit32.lshift = nativebit.blshift
+    bit32.rshift = nativebit.blogic_rshift
+
+    if _CC_DISABLE_LUA51_FEATURES then
+        -- Remove the Lua 5.1 features that will be removed when we update to Lua 5.2, for compatibility testing.
+        -- See "disable_lua51_functions" in ComputerCraft.cfg
+        setfenv = nil
+        getfenv = nil
+        loadstring = nil
+        unpack = nil
+        math.log10 = nil
+        table.maxn = nil
+        bit = nil
+    end
+end
+
 -- Install fix for luaj's broken string.sub/string.find
 local nativestringfind = string.find
 local nativestringsub = string.sub
@@ -32,7 +93,7 @@ function os.pullEvent( sFilter )
     if eventData[1] == "terminate" then
         error( "Terminated", 0 )
     end
-    return unpack( eventData )
+    return table.unpack( eventData )
 end
 
 -- Install globals
@@ -114,11 +175,12 @@ end
 
 function printError( ... )
     if term.isColour() then
-        term.setTextColour( colours.red )
+        term.setTextColour( colors.red )
     end
-    local x,y = term.getCursorPos()
     print( ... )
-    term.setTextColour( colours.white )
+    if term.isColour() then
+        term.setTextColour( colors.white )
+    end
 end
 
 function read( _sReplaceChar, _tHistory, _fnComplete )
@@ -176,8 +238,8 @@ function read( _sReplaceChar, _tHistory, _fnComplete )
             if not _bClear then
                 oldText = term.getTextColor()
                 oldBg = term.getBackgroundColor()
-                term.setTextColor( colours.white )
-                term.setBackgroundColor( colours.grey )
+                term.setTextColor( colors.white )
+                term.setBackgroundColor( colors.gray )
             end
             if sReplace then
                 term.write( string.rep( sReplace, string.len( sCompletion ) ) )
@@ -389,36 +451,37 @@ function read( _sReplaceChar, _tHistory, _fnComplete )
     return sLine
 end
 
-loadfile = function( _sFile )
+loadfile = function( _sFile, _tEnv )
     local file = fs.open( _sFile, "r" )
     if file then
-        local func, err = loadstring( file.readAll(), fs.getName( _sFile ) )
+        local func, err = load( file.readAll(), fs.getName( _sFile ), "t", _tEnv )
         file.close()
         return func, err
     end
     return nil, "File not found"
 end
 
-dofile = function( _sFile )
-    local fnFile, e = loadfile( _sFile )
-    if fnFile then
-        setfenv( fnFile, getfenv(2) )
-        return fnFile()
-    else
-        error( e, 2 )
+if _VERSION == "Lua 5.1" and not _CC_DISABLE_LUA51_FEATURES then
+    dofile = function( _sFile )
+        local fnFile, e = loadfile( _sFile )
+        if fnFile then
+            setfenv( fnFile, getfenv(2) )
+            return fnFile()
+        else
+            error( e, 2 )
+        end
     end
 end
 
 -- Install the rest of the OS api
 function os.run( _tEnv, _sPath, ... )
     local tArgs = { ... }
-    local fnFile, err = loadfile( _sPath )
+    local tEnv = _tEnv
+    setmetatable( tEnv, { __index = _G } )
+    local fnFile, err = loadfile( _sPath, tEnv )
     if fnFile then
-        local tEnv = _tEnv
-        setmetatable( tEnv, { __index = _G } )
-        setfenv( fnFile, tEnv )
         local ok, err = pcall( function()
-            fnFile( unpack( tArgs ) )
+            fnFile( table.unpack( tArgs ) )
         end )
         if not ok then
             if err and err ~= "" then
@@ -436,32 +499,33 @@ end
 
 -- Prevent access to metatables or environments of strings, as these are global between all computers
 do
-    local nativegetfenv = getfenv
     local nativegetmetatable = getmetatable
     local nativeerror = error
     local nativetype = type
     local string_metatable = nativegetmetatable("")
-    local string_env = nativegetfenv(("").gsub)
     function getmetatable( t )
         local mt = nativegetmetatable( t )
-        if mt == string_metatable or mt == string_env then
+        if mt == string_metatable then
             nativeerror( "Attempt to access string metatable", 2 )
         else
             return mt
         end
     end
-    function getfenv( env )
-        if env == nil then
-            env = 2
-        elseif nativetype( env ) == "number" and env > 0 then
-            env = env + 1
-        end
-        local fenv = nativegetfenv(env)
-        if fenv == string_metatable or fenv == string_env then
-            --nativeerror( "Attempt to access string metatable", 2 )
-            return nativegetfenv( 0 )
-        else
-            return fenv
+    if _VERSION == "Lua 5.1" and not _CC_DISABLE_LUA51_FEATURES then
+        local string_env = nativegetfenv(("").gsub)
+        function getfenv( env )
+            if env == nil then
+                env = 2
+            elseif nativetype( env ) == "number" and env > 0 then
+                env = env + 1
+            end
+            local fenv = nativegetfenv(env)
+            if fenv == string_env then
+                --nativeerror( "Attempt to access string metatable", 2 )
+                return nativegetfenv( 0 )
+            else
+                return fenv
+            end
         end
     end
 end
@@ -474,12 +538,11 @@ function os.loadAPI( _sPath )
         return false
     end
     tAPIsLoading[sName] = true
-        
+
     local tEnv = {}
     setmetatable( tEnv, { __index = _G } )
-    local fnAPI, err = loadfile( _sPath )
+    local fnAPI, err = loadfile( _sPath, tEnv )
     if fnAPI then
-        setfenv( fnAPI, tEnv )
         local ok, err = pcall( fnAPI )
         if not ok then
             printError( err )
@@ -494,9 +557,11 @@ function os.loadAPI( _sPath )
     
     local tAPI = {}
     for k,v in pairs( tEnv ) do
-        tAPI[k] =  v
+        if k ~= "_ENV" then
+            tAPI[k] =  v
+        end
     end
-    
+
     _G[sName] = tAPI    
     tAPIsLoading[sName] = nil
     return true
@@ -622,7 +687,6 @@ function fs.complete( sPath, sLocation, bIncludeFiles, bIncludeDirs )
     end
     return tEmpty
 end
-
 
 -- Load APIs
 local bAPIError = false

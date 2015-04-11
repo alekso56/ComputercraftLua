@@ -108,13 +108,12 @@ elseif sCommand == "run" then
  
     local res = get(sCode)
     if res then
-        local func, err = loadstring(res)
+        local func, err = load(res, sCode, "t", _ENV)
         if not func then
             printError( err )
             return
         end
-        setfenv(func, getfenv())
-        local success, msg = pcall(func, unpack(tArgs, 3))
+        local success, msg = pcall(func, table.unpack(tArgs, 3))
         if not success then
             printError( msg )
         end

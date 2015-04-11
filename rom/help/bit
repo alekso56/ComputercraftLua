@@ -1,4 +1,4 @@
-Functions in the bit manipulation API:
+Functions in the bit manipulation API (NOTE: This API will be removed in a future version. Use bit32 instead):
 bit.bnot(n)          -- bitwise not (~n)
 bit.band(m, n)       -- bitwise and (m & n)
 bit.bor(m, n)        -- bitwise or (m | n)

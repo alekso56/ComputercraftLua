@@ -77,7 +77,7 @@ function shell.run( ... )
 	local tWords = tokenise( ... )
 	local sCommand = tWords[1]
 	if sCommand then
-		return run( sCommand, unpack( tWords, 2 ) )
+		return run( sCommand, table.unpack( tWords, 2 ) )
 	end
 	return false
 end
@@ -294,9 +294,9 @@ if multishell then
         if sCommand then
         	local sPath = shell.resolveProgram( sCommand )
         	if sPath == "rom/programs/shell" then
-                return multishell.launch( tEnv, sPath, unpack( tWords, 2 ) )
+                return multishell.launch( tEnv, sPath, table.unpack( tWords, 2 ) )
             elseif sPath ~= nil then
-                return multishell.launch( tEnv, "rom/programs/shell", sPath, unpack( tWords, 2 ) )
+                return multishell.launch( tEnv, "rom/programs/shell", sCommand, table.unpack( tWords, 2 ) )
             else
                 printError( "No such program" )
             end

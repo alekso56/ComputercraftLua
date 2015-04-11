@@ -1,7 +1,7 @@
 
 local tArgs = { ... }
 if #tArgs > 0 then
-    shell.openTab( unpack( tArgs ) )
+    shell.openTab( table.unpack( tArgs ) )
 else
     shell.openTab( "shell" )
 end

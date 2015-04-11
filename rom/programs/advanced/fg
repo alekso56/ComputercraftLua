@@ -1,7 +1,7 @@
 
 local tArgs = { ... }
 if #tArgs > 0 then
-    local nTask = shell.openTab( unpack( tArgs ) )
+    local nTask = shell.openTab( table.unpack( tArgs ) )
     if nTask then
         shell.switchTab( nTask )
     end

@@ -100,10 +100,10 @@ nshAPI.packFile = function(path)
 	local outputTable = {}
 	for i = 1, #data, 3 do
 		local num1, num2, num3 = data[i], data[i + 1] or 0, data[i + 2] or 0
-		table.insert(outputTable, string.char(bit.band(bit.brshift(num1, 2), 63)))
-		table.insert(outputTable, string.char(bit.bor(bit.band(bit.blshift(num1, 4), 48), bit.band(bit.brshift(num2, 4), 15))))
-		table.insert(outputTable, string.char(bit.bor(bit.band(bit.blshift(num2, 2), 60), bit.band(bit.brshift(num3, 6), 3))))
-		table.insert(outputTable, string.char(bit.band(num3, 63)))
+		table.insert(outputTable, string.char(bit32.band(bit32.arshift(num1, 2), 63)))
+		table.insert(outputTable, string.char(bit32.bor(bit32.band(bit32.lshift(num1, 4), 48), bit32.band(bit32.arshift(num2, 4), 15))))
+		table.insert(outputTable, string.char(bit32.bor(bit32.band(bit32.lshift(num2, 2), 60), bit32.band(bit32.arshift(num3, 6), 3))))
+		table.insert(outputTable, string.char(bit32.band(num3, 63)))
 	end
 	--mark non-data (invalid) bytes
 	if #data % 3 == 1 then
@@ -119,9 +119,9 @@ nshAPI.unpackAndSaveFile = function(path, data)
 	local outputTable = {}
 	for i=1, #data, 4 do
 		local char1, char2, char3, char4 = string.byte(string.sub(data, i, i)), string.byte(string.sub(data, i + 1, i + 1)), string.byte(string.sub(data, i + 2, i + 2)), string.byte(string.sub(data, i + 3, i + 3))
-		table.insert(outputTable, bit.band(bit.bor(bit.blshift(char1, 2), bit.brshift(char2, 4)), 255))
-		table.insert(outputTable, bit.band(bit.bor(bit.blshift(char2, 4), bit.brshift(char3, 2)), 255))
-		table.insert(outputTable, bit.band(bit.bor(bit.blshift(char3, 6), char4), 255))
+		table.insert(outputTable, bit32.band(bit32.bor(bit32.lshift(char1, 2), bit32.arshift(char2, 4)), 255))
+		table.insert(outputTable, bit32.band(bit32.bor(bit32.lshift(char2, 4), bit32.arshift(char3, 2)), 255))
+		table.insert(outputTable, bit32.band(bit32.bor(bit32.lshift(char3, 6), char4), 255))
 	end
 	--clean invalid bytes if marked
 	if string.sub(data, #data, #data) == "=" then
@@ -368,7 +368,7 @@ local function resumeThread(conn, event)
 	if not connections[conn].filter or event[1] == connections[conn].filter then
 		connections[conn].filter = nil
 		local _oldTerm = term.redirect(connections[conn].target)
-		local passback = {coroutine.resume(connections[conn].thread, unpack(event))}
+		local passback = {coroutine.resume(connections[conn].thread, table.unpack(event))}
 		if passback[1] and passback[2] then
 			connections[conn].filter = passback[2]
 		end
@@ -499,7 +499,7 @@ if #args >= 1 and args[1] == "host" then
 			end
 		elseif eventFilter[event[1]] then
 			--user interaction.
-			coroutine.resume(connections.localShell.thread, unpack(event))
+			coroutine.resume(connections.localShell.thread, table.unpack(event))
 			if coroutine.status(connections.localShell.thread) == "dead" then
 				for cNum, cInfo in pairs(connections) do
 					if cNum ~= "localShell" then
@@ -610,7 +610,7 @@ elseif #args >= 1 then --either no server running or we are the local shell on t
 		if #unpackCo > 0 then
 			for i = #unpackCo, 1, -1 do
 				if coroutine.status(unpackCo[i]) ~= "dead" then
-					coroutine.resume(unpackCo[i], unpack(event))
+					coroutine.resume(unpackCo[i], table.unpack(event))
 				else
 					table.remove(unpackCo, i)
 				end

@@ -19,7 +19,7 @@ black = 32768
 function combine( ... )
     local r = 0
     for n,c in ipairs( { ... } ) do
-        r = bit.bor(r,c)
+        r = bit32.bor(r,c)
     end
     return r
 end
@@ -27,11 +27,11 @@ end
 function subtract( colors, ... )
 	local r = colors
 	for n,c in ipairs( { ... } ) do
-		r = bit.band(r, bit.bnot(c))
+		r = bit32.band(r, bit32.bnot(c))
 	end
 	return r
 end
 
 function test( colors, color )
-    return ((bit.band(colors, color)) == color)
+    return ((bit32.band(colors, color)) == color)
 end

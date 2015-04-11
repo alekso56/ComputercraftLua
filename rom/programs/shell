@@ -167,7 +167,7 @@ function shell.programs( _bIncludeHidden )
 end
 
 local function completeProgram( sLine )
-	if string.sub( sLine, 1, 1 ) == "/" then
+	if #sLine > 0 and string.sub( sLine, 1, 1 ) == "/" then
 	    -- Add programs from the root
 	    return fs.complete( sLine, "", true, false )
 
@@ -205,10 +205,10 @@ local function completeProgram( sLine )
     end
 end
 
-local function completeProgramArgument( sProgram, nArgument, sLine )
+local function completeProgramArgument( sProgram, nArgument, sPart, tPreviousParts )
     local tInfo = tCompletionInfo[ sProgram ]
     if tInfo then
-        return tInfo.fnComplete( shell, nArgument, sLine )
+        return tInfo.fnComplete( shell, nArgument, sPart, tPreviousParts )
     end
     return nil
 end
@@ -239,7 +239,10 @@ function shell.complete( sLine )
 
         elseif nIndex > 1 then
             local sPath = shell.resolveProgram( tWords[1] )
-            return completeProgramArgument( sPath , nIndex - 1, tWords[nIndex] or "" )
+            local sPart = tWords[nIndex] or ""
+            local tPreviousParts = tWords
+            tPreviousParts[nIndex] = nil
+            return completeProgramArgument( sPath , nIndex - 1, sPart, tPreviousParts )
 
         end
     end

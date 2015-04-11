@@ -147,6 +147,11 @@ function read( _sReplaceChar, _tHistory, _fnComplete )
         end
     end
 
+    local function uncomplete()
+        tCompletions = nil
+        nCompletion = nil
+    end
+
     local w = term.getSize()
     local sx = term.getCursorPos()
 
@@ -220,9 +225,10 @@ function read( _sReplaceChar, _tHistory, _fnComplete )
             -- Append this string
             sLine = sLine .. sCommonPrefix
             nPos = string.len( sLine )
-            recomplete()
-            redraw()
         end
+
+        recomplete()
+        redraw()
     end
     while true do
         local sEvent, param = os.pullEvent()
@@ -247,8 +253,7 @@ function read( _sReplaceChar, _tHistory, _fnComplete )
                 -- Enter
                 if nCompletion then
                     clear()
-                    tCompletions = nil
-                    nCompletion = nil
+                    uncomplete()
                     redraw()
                 end
                 break
@@ -320,7 +325,7 @@ function read( _sReplaceChar, _tHistory, _fnComplete )
                         sLine = ""
                         nPos = 0
                     end
-                    recomplete()
+                    uncomplete()
                     redraw()
 
                 end

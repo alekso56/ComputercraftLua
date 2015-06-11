@@ -9,29 +9,36 @@ if _VERSION == "Lua 5.1" then
         if mode ~= nil and mode ~= "t" then
             error( "Binary chunk loading prohibited", 2 )
         end
-        if type(x) == "string" then
-            local result, err = nativeloadstring( x, name )
-            if result then
-                if env then
-                    env._ENV = env
-                    nativesetfenv( result, env )
+        local ok, p1, p2 = pcall( function()        
+            if type(x) == "string" then
+                local result, err = nativeloadstring( x, name )
+                if result then
+                    if env then
+                        env._ENV = env
+                        nativesetfenv( result, env )
+                    end
+                    return result
+                else
+                    return nil, err
                 end
-                return result
             else
-                return nil, err
+                local result, err = nativeload( x, name )
+                if result then
+                    if env then
+                        env._ENV = env
+                        nativesetfenv( result, env )
+                    end
+                    return result
+                else
+                    return nil, err
+                end
             end
+        end )
+        if ok then
+            return p1, p2
         else
-            local result, err = nativeload( x, name )
-            if result then
-                if env then
-                    env._ENV = env
-                    nativesetfenv( result, env )
-                end
-                return result
-            else
-                return nil, err
-            end
-        end
+            error( p1, 2 )
+        end        
     end
     table.unpack = unpack
     table.pack = function( ... ) return { ... } end
@@ -64,8 +71,8 @@ end
 local nativestringfind = string.find
 local nativestringsub = string.sub
 local nativepcall = pcall
-function string.sub( ... )
-    local ok, r = nativepcall( nativestringsub, ... )
+function string.sub( s, start, _end )
+    local ok, r = nativepcall( nativestringsub, s, start, _end )
     if ok then
         if r then
             return r .. ""

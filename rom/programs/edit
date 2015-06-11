@@ -504,9 +504,9 @@ while bRunning do
 				-- Move cursor down
 			    if nCompletion then
 			        -- Cycle completions
-                    nCompletion = nCompletion - 1
-                    if nCompletion < 1 then
-                        nCompletion = #tCompletions
+                    nCompletion = nCompletion + 1
+                    if nCompletion > #tCompletions then
+                        nCompletion = 1
                     end
                     redrawLine(y)
 

@@ -8,6 +8,7 @@ New Features in ComputerCraft 1.74:
 * Added term.getTextColour(), term.getBackgroundColour() and term.blit().
 * Improved the performance of text rendering on Advanced Computers.
 * Added a "Run" button to the edit program on Advanced Computers.
+* Turtles can now push players and entities (configurable).
 * Turtles now respect server spawn protection (configurable).
 * Added a turtle permissions API for mod authors.
 * Implemented a subset of the Lua 5.2 API so programs can be written against them ahead of a future Lua version upgrade.
@@ -15,7 +16,7 @@ New Features in ComputerCraft 1.74:
 * Command Computers can no longer be broken by survival players.
 * Fixed the "pick block" key not working on ComputerCraft items in creative mode.
 * Fixed the "edit" program being hard to use on certain European keyboards.
-* Added a constant "_CC_VERSION".
+* Added "_CC_VERSION" and "_MC_VERSION" constants.
 
 New Features in ComputerCraft 1.73:
 

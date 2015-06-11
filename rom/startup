@@ -157,7 +157,7 @@ local function completePastebin( shell, nIndex, sText, tPreviousText )
         end
     end
 end
-local tChatOptions = { "host ", "join ", "run " }
+local tChatOptions = { "host ", "join " }
 local function completeChat( shell, nIndex, sText, tPreviousText )
     if nIndex == 1 then
         return completeMultipleChoice( sText, tChatOptions )

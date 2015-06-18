@@ -45,13 +45,13 @@ local tMenuItems = {}
 if not bReadOnly then
     table.insert( tMenuItems, "Save" )
 end
-table.insert( tMenuItems, "Exit" )
-if peripheral.find( "printer" ) then
-    table.insert( tMenuItems, "Print" )
-end
 if shell.openTab then
     table.insert( tMenuItems, "Run" )
 end
+if peripheral.find( "printer" ) then
+    table.insert( tMenuItems, "Print" )
+end
+table.insert( tMenuItems, "Exit" )
 
 local sStatus = "Press Ctrl to access menu"
 if string.len( sStatus ) > w - 5 then

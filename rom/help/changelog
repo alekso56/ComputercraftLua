@@ -11,7 +11,7 @@ New Features in ComputerCraft 1.74:
 * Turtles can now push players and entities (configurable).
 * Turtles now respect server spawn protection (configurable).
 * Added a turtle permissions API for mod authors.
-* Implemented a subset of the Lua 5.2 API so programs can be written against them ahead of a future Lua version upgrade.
+* Implemented a subset of the Lua 5.2 API so programs can be written against it now, ahead of a future Lua version upgrade.
 * Added a config option to disable parts of the Lua 5.1 API which will be removed when a future Lua version upgrade happens.
 * Command Computers can no longer be broken by survival players.
 * Fixed the "pick block" key not working on ComputerCraft items in creative mode.

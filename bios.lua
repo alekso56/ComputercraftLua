@@ -68,22 +68,62 @@ if _VERSION == "Lua 5.1" then
 end
 
 -- Install fix for luaj's broken string.sub/string.find
-local nativestringfind = string.find
-local nativestringsub = string.sub
-local nativepcall = pcall
-function string.sub( s, start, _end )
-    local ok, r = nativepcall( nativestringsub, s, start, _end )
-    if ok then
-        if r then
-            return r .. ""
-        end
-        return nil
-    else
-        error( r, 2 )
+do
+    local nativestringfind = string.find
+    local nativestringsub = string.sub
+    local nativepcall = pcall
+    local stringCopy = {}
+    for k,v in pairs(string) do
+        stringCopy[k] = v
     end
+    stringCopy.sub = function( s, start, _end )
+        local ok, r = nativepcall( nativestringsub, s, start, _end )
+        if ok then
+            if r then
+                return r .. ""
+            end
+            return nil
+        else
+            error( r, 2 )
+        end
+    end
+    stringCopy.find = function( s, ... )
+        return nativestringfind( s .. "", ... );
+    end
+    string = stringCopy
 end
-function string.find( s, ... )
-    return nativestringfind( s .. "", ... );
+
+-- Prevent access to metatables or environments of strings, as these are global between all computers
+do
+    local nativegetmetatable = getmetatable
+    local nativeerror = error
+    local nativetype = type
+    local string_metatable = nativegetmetatable("")
+    function getmetatable( t )
+        local mt = nativegetmetatable( t )
+        if mt == string_metatable then
+            nativeerror( "Attempt to access string metatable", 2 )
+        else
+            return mt
+        end
+    end
+    if _VERSION == "Lua 5.1" and not _CC_DISABLE_LUA51_FEATURES then
+        local string_env = nativegetfenv(("").gsub)
+        function getfenv( env )
+            if env == nil then
+                env = 2
+            elseif nativetype( env ) == "number" and env > 0 then
+                env = env + 1
+            end
+            local fenv = nativegetfenv(env)
+            if fenv == string_env then
+                --nativeerror( "Attempt to access string metatable", 2 )
+                return nativegetfenv( 0 )
+            else
+                return fenv
+            end
+        end
+    end
 end
 
 -- Install lua parts of the os api
@@ -502,39 +542,6 @@ function os.run( _tEnv, _sPath, ... )
         printError( err )
     end
     return false
-end
-
--- Prevent access to metatables or environments of strings, as these are global between all computers
-do
-    local nativegetmetatable = getmetatable
-    local nativeerror = error
-    local nativetype = type
-    local string_metatable = nativegetmetatable("")
-    function getmetatable( t )
-        local mt = nativegetmetatable( t )
-        if mt == string_metatable then
-            nativeerror( "Attempt to access string metatable", 2 )
-        else
-            return mt
-        end
-    end
-    if _VERSION == "Lua 5.1" and not _CC_DISABLE_LUA51_FEATURES then
-        local string_env = nativegetfenv(("").gsub)
-        function getfenv( env )
-            if env == nil then
-                env = 2
-            elseif nativetype( env ) == "number" and env > 0 then
-                env = env + 1
-            end
-            local fenv = nativegetfenv(env)
-            if fenv == string_env then
-                --nativeerror( "Attempt to access string metatable", 2 )
-                return nativegetfenv( 0 )
-            else
-                return fenv
-            end
-        end
-    end
 end
 
 local tAPIsLoading = {}

@@ -1,3 +1,8 @@
+New Features in ComputerCraft 1.75:
+
+* Fixed monitors sometimes rendering without part of their text.
+* Fixed a regression in the "bit" API.
+
 New Features in ComputerCraft 1.74:
 
 * Added tab completion to "edit", "lua" and the shell.

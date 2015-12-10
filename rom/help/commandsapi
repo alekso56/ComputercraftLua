@@ -4,6 +4,7 @@ commands.execAsync( command )
 commands.list()
 commands.getBlockPosition()
 commands.getBlockInfo( x, y, z )
+commands.getBlockInfos( minx, miny, minz, maxx, maxy, maxz )
 
 The commands API can also be used to invoke commands directly, like so:
 commands.say( "Hello World" )

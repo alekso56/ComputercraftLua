@@ -1,6 +1,7 @@
 New Features in ComputerCraft 1.76:
 
 * Ported to Minecraft 1.8
+* Added Long Range Modems
 * Added support for the new commands in Minecraft 1.8 to the Command Computer
 * The return values of turtle.inspect() and commands.getBlockInfo() now include blockstate information
 * Added commands.getBlockInfos() function for Command Computers

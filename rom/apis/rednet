@@ -195,7 +195,7 @@ function lookup( sProtocol, sHostname )
         if event == "rednet_message" then
             -- Got a rednet message, check if it's the response to our request
             local nSenderID, tMessage, sMessageProtocol = p1, p2, p3
-            if sMessageProtocol == "dns" and tMessage.sType == "lookup response" then
+            if sMessageProtocol == "dns" and type(tMessage) == "table" and tMessage.sType == "lookup response" then
                 if tMessage.sProtocol == sProtocol then
                     if sHostname == nil then
                         table.insert( tResults, nSenderID )

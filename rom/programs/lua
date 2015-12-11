@@ -66,11 +66,16 @@ while bRunning do
         	while (tResults[n + 1] ~= nil) or (n <= nForcePrint) do
         	    local value = tResults[ n + 1 ]
         	    if type( value ) == "table" then
-            	    local ok, serialised = pcall( textutils.serialise, value )
-            	    if ok then
-            	        print( serialised )
-            	    else
-            	        print( tostring( value ) )
+        	        local metatable = getmetatable( value )
+        	        if type(metatable) == "table" and type(metatable.__tostring) == "function" then
+        	            print( tostring( value ) )
+        	        else
+                        local ok, serialised = pcall( textutils.serialise, value )
+                        if ok then
+                            print( serialised )
+                        else
+                            print( tostring( value ) )
+                        end
             	    end
             	else
             	    print( tostring( value ) )

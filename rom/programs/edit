@@ -21,7 +21,7 @@ local tLines = {}
 local bRunning = true
 
 -- Colours
-local highlightColour, keywordColour, commentColour, textColour, bgColour
+local highlightColour, keywordColour, commentColour, textColour, bgColour, stringColour
 if term.isColour() then
 	bgColour = colours.black
 	textColour = colours.white

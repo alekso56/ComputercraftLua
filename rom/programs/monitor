@@ -1,5 +1,5 @@
 
-function printUsage()
+local function printUsage()
 	print( "Usage: monitor <name> <program> <arguments>" )
 	return
 end

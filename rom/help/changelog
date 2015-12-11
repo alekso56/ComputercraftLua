@@ -2,12 +2,14 @@ New Features in ComputerCraft 1.76:
 
 * Ported to Minecraft 1.8
 * Added Long Range Modems
+* Fixed handling of 8-bit characters. All the characters in the ISO 8859-1 codepage can now be rendered, plus some extra characters for graphics drawing.
 * Added support for the new commands in Minecraft 1.8 to the Command Computer
 * The return values of turtle.inspect() and commands.getBlockInfo() now include blockstate information
 * Added commands.getBlockInfos() function for Command Computers
 * Added new "peripherals" program
 * Replaced the "_CC_VERSION" and "_MC_VERSION" constants with a new "_HOST" constant.
 * Shortened the length of time that "Ctrl+T", "Ctrl+S" and "Ctrl+R" must be held down for to terminate, shutdown and reboot the computer.
+* Fixed many bugs
 
 New Features in ComputerCraft 1.75:
 
@@ -121,7 +123,7 @@ New Features in ComputerCraft 1.58:
 New Features in ComputerCraft 1.57:
 
 * Ported to Minecraft 1.6.4
-* Added two new Treasure Disks: Conway’s Game of Life by vilsol and Protector by fredthead
+* Added two new Treasure Disks: Conway's Game of Life by vilsol and Protector by fredthead
 * Fixed a very nasty item duplication bug
 
 New Features in ComputerCraft 1.56:

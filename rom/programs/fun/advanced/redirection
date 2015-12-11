@@ -19,6 +19,7 @@ local bPaused
 local Tick
 local Blocks
 local XOrgin,YOrgin
+local fLevel
 
 local function reset()
     sLevelTitle = ""

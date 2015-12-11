@@ -399,9 +399,9 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
                         }
                     else
                         tNewLines[y] = {
-                            text = tOldLine.text .. string_sub( sEmptyText, 1, nWidth + 1, nNewWidth ),
-                            textColor = tOldLine.textColor .. string_sub( sEmptyTextColor, 1, nWidth + 1, nNewWidth ),
-                            backgroundColor = tOldLine.backgroundColor .. string_sub( sEmptyBackgroundColor, 1, nWidth + 1, nNewWidth ),
+                            text = tOldLine.text .. string_sub( sEmptyText, nWidth + 1, nNewWidth ),
+                            textColor = tOldLine.textColor .. string_sub( sEmptyTextColor, nWidth + 1, nNewWidth ),
+                            backgroundColor = tOldLine.backgroundColor .. string_sub( sEmptyBackgroundColor, nWidth + 1, nNewWidth ),
                         }
                     end
                 end

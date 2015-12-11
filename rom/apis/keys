@@ -2,7 +2,6 @@
 -- Minecraft key code bindings
 -- See http://www.minecraftwiki.net/wiki/Key_codes for more info
 
-local nothing = 42
 local tKeys = {
 	nil,	 	"one", 		"two", 		"three", 	"four",			-- 1
 	"five", 	"six", 		"seven", 	"eight", 	"nine",			-- 6
@@ -34,8 +33,8 @@ local tKeys = {
 	nil,		nil,		nil,		nil,		nil,			-- 136
 	"numPadEquals",nil,		nil,		"cimcumflex","at",			-- 141
 	"colon",	"underscore","kanji",	"stop",		"ax",			-- 146
-	nil,		"numPadEnter","rightCtrl",nil,		nil,			-- 151
-	nil,		nil,		nil,		nil,		nil,			-- 156
+	nil,		nil,		nil,		nil,		nil,			-- 151
+	"numPadEnter","rightCtrl",nil,      nil,		nil,			-- 156
 	nil,		nil,		nil,		nil,		nil,			-- 161
 	nil,		nil,		nil,		nil,		nil,			-- 166
 	nil,		nil,		nil,		nil,		nil,			-- 171

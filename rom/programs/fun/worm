@@ -17,7 +17,7 @@ else
 	fruitColour = colours.white
 end
 
-function printCentred( y, s )
+local function printCentred( y, s )
 	local x = math.floor((w - string.len(s)) / 2)
 	term.setCursorPos(x,y)
 	--term.clearLine()

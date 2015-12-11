@@ -473,7 +473,7 @@ local function itemize( t )
 	return text
 end
 
-function findItem( _tList, _sQuery )
+local function findItem( _tList, _sQuery )
 	for sItem, tItem in pairs( _tList ) do
 		if sItem == _sQuery then
 			return sItem
@@ -607,7 +607,7 @@ local tMatches = {
 }
 
 local commands = {}
-function doCommand( text )
+local function doCommand( text )
 	if text == "" then
 		commands[ "noinput" ]()
 		return

@@ -225,7 +225,7 @@ end
 
 empty_json_array = {}
 
-local function serializeJSONImpl( t, tTracking )
+local function serializeJSONImpl( t, tTracking, bNBTStyle )
     local sType = type(t)
     if t == empty_json_array then
         return "[]"
@@ -247,7 +247,12 @@ local function serializeJSONImpl( t, tTracking )
             local nArraySize = 0
             for k,v in pairs(t) do
                 if type(k) == "string" then
-                    local sEntry = serializeJSONImpl( k, tTracking ) .. ":" .. serializeJSONImpl( v, tTracking )
+                    local sEntry
+                    if bNBTStyle then
+                        sEntry = tostring(k) .. ":" .. serializeJSONImpl( v, tTracking, bNBTStyle )
+                    else
+                        sEntry = string.format( "%q", k ) .. ":" .. serializeJSONImpl( v, tTracking, bNBTStyle )
+                    end
                     if nObjectSize == 0 then
                         sObjectResult = sObjectResult .. sEntry
                     else
@@ -257,7 +262,7 @@ local function serializeJSONImpl( t, tTracking )
                 end
             end
             for n,v in ipairs(t) do
-                local sEntry = serializeJSONImpl( v, tTracking )
+                local sEntry = serializeJSONImpl( v, tTracking, bNBTStyle )
                 if nArraySize == 0 then
                     sArrayResult = sArrayResult .. sEntry
                 else
@@ -302,9 +307,9 @@ function unserialize( s )
     return nil
 end
 
-function serializeJSON( t )
+function serializeJSON( t, bNBTStyle )
     local tTracking = {}
-    return serializeJSONImpl( t, tTracking )
+    return serializeJSONImpl( t, tTracking, bNBTStyle or false )
 end
 
 function urlEncode( str )

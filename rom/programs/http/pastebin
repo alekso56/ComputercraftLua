@@ -21,7 +21,7 @@ end
 local function get(paste)
     write( "Connecting to pastebin.com... " )
     local response = http.get(
-        "http://pastebin.com/raw.php?i="..textutils.urlEncode( paste )
+        "http://pastebin.com/raw/"..textutils.urlEncode( paste )
     )
         
     if response then

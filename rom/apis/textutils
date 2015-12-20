@@ -315,8 +315,17 @@ end
 function urlEncode( str )
     if str then
         str = string.gsub(str, "\n", "\r\n")
-        str = string.gsub(str, "([^%w ])", function(c)
-            return string.format("%%%02X", string.byte(c))
+        str = string.gsub(str, "([^A-Za-z0-9 %-%_%.])", function(c)
+            local n = string.byte(c)
+            if n < 128 then
+                -- ASCII
+                return string.format("%%%02X", n)
+            else
+                -- Non-ASCII (encode as UTF-8)
+                return
+                    string.format("%%%02X", 192 + bit32.band( bit32.arshift(n,6), 31 ) ) ..
+                    string.format("%%%02X", 128 + bit32.band( n, 63 ) )
+            end
         end )
         str = string.gsub(str, " ", "+")
     end

@@ -174,7 +174,7 @@ local function drawInterface()
 	term.setCursorPos(w-1, 17)
 	term.setBackgroundColour( canvasColour )
 	term.setTextColour( colours.grey )
-	term.write("XX")
+	term.write("\127\127")
 			
 	-- Left and Right Selected Colours
 	for i=18,18 do
@@ -185,7 +185,7 @@ local function drawInterface()
 		else
 			term.setBackgroundColour( canvasColour )
 			term.setTextColour( colours.grey )
-			term.write("X")
+			term.write("\127")
 		end
 		if rightColour ~= nil then
 			term.setBackgroundColour( rightColour )
@@ -193,7 +193,7 @@ local function drawInterface()
 		else
 			term.setBackgroundColour( canvasColour )
 			term.setTextColour( colours.grey )
-			term.write("X")
+			term.write("\127")
 		end
 	end
 
@@ -219,7 +219,7 @@ local function drawCanvasPixel( x, y )
 		term.setBackgroundColour( canvasColour )
 		term.setTextColour( colours.grey )
 		term.setCursorPos(x, y)
-        term.write("-")
+        term.write("\127")
 	end
 end
 

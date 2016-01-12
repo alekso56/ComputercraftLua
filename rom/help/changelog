@@ -1,3 +1,11 @@
+New Features in ComputerCraft 1.77:
+
+* Ported to Minecraft 1.8.8
+* Added "settings" API
+* Added "set" and "wget" programs
+* Added settings to disable multishell, startup scripts, and tab completion on a per-computer basis
+* All Computer and Turtle items except Command Computers can now be mounted in disk drives
+
 New Features in ComputerCraft 1.76:
 
 * Ported to Minecraft 1.8

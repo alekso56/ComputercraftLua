@@ -33,13 +33,15 @@ while bRunning do
 	--term.setTextColour( colours.white )
 
 	local s = read( nil, tCommandHistory, function( sLine )
-	    local nStartPos = string.find( sLine, "[a-zA-Z0-9_%.]+$" )
-	    if nStartPos then
-	        sLine = string.sub( sLine, nStartPos )
-	    end
-	    if #sLine > 0 then
-            return textutils.complete( sLine, tEnv )
-        end
+		if settings.get( "lua.autocomplete" ) then
+		    local nStartPos = string.find( sLine, "[a-zA-Z0-9_%.]+$" )
+		    if nStartPos then
+		        sLine = string.sub( sLine, nStartPos )
+		    end
+		    if #sLine > 0 then
+	            return textutils.complete( sLine, tEnv )
+	        end
+		end
         return nil
 	end )
 	table.insert( tCommandHistory, s )

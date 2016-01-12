@@ -336,7 +336,13 @@ else
         write( shell.dir() .. "> " )
         term.setTextColour( textColour )
 
-        local sLine = read( nil, tCommandHistory, shell.complete )
+
+        local sLine
+        if settings.get( "shell.autocomplete" ) then
+            sLine = read( nil, tCommandHistory, shell.complete )
+        else
+            sLine = read( nil, tCommandHistory )
+        end
         table.insert( tCommandHistory, sLine )
         shell.run( sLine )
     end

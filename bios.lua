@@ -1,10 +1,10 @@
 
-local nativesetfenv = setfenv
 local nativegetfenv = getfenv
 if _VERSION == "Lua 5.1" then
     -- Install parts of the Lua 5.2 API so that programs can be written against it now
     local nativeload = load
     local nativeloadstring = loadstring
+    local nativesetfenv = setfenv
     function load( x, name, mode, env )
         if mode ~= nil and mode ~= "t" then
             error( "Binary chunk loading prohibited", 2 )
@@ -213,20 +213,27 @@ end
 
 function print( ... )
     local nLinesPrinted = 0
-    for n,v in ipairs( { ... } ) do
-        nLinesPrinted = nLinesPrinted + write( tostring( v ) )
+    local nLimit = select("#", ... )
+    for n = 1, nLimit do
+        local s = tostring( select( n, ... ) )
+        if n < nLimit then
+            s = s .. "\t"
+        end
+        nLinesPrinted = nLinesPrinted + write( s )
     end
     nLinesPrinted = nLinesPrinted + write( "\n" )
     return nLinesPrinted
 end
 
 function printError( ... )
+    local oldColour
     if term.isColour() then
+        oldColour = term.getTextColour()
         term.setTextColour( colors.red )
     end
     print( ... )
     if term.isColour() then
-        term.setTextColour( colors.white )
+        term.setTextColour( oldColour )
     end
 end
 
@@ -316,28 +323,13 @@ function read( _sReplaceChar, _tHistory, _fnComplete )
 
             -- Find the common prefix of all the other suggestions which start with the same letter as the current one
             local sCompletion = tCompletions[ nCompletion ]
-            local sFirstLetter = string.sub( sCompletion, 1, 1 )
-            local sCommonPrefix = sCompletion
-            for n=1,#tCompletions do
-                local sResult = tCompletions[n]
-                if n ~= nCompletion and string.find( sResult, sFirstLetter, 1, true ) == 1 then
-                    while #sCommonPrefix > 1 do
-                        if string.find( sResult, sCommonPrefix, 1, true ) == 1 then
-                            break
-                        else
-                            sCommonPrefix = string.sub( sCommonPrefix, 1, #sCommonPrefix - 1 )
-                        end
-                    end
-                end
-            end
-
-            -- Append this string
-            sLine = sLine .. sCommonPrefix
+            sLine = sLine .. sCompletion
             nPos = string.len( sLine )
-        end
 
-        recomplete()
-        redraw()
+            -- Redraw
+            recomplete()
+            redraw()
+        end
     end
     while true do
         local sEvent, param = os.pullEvent()
@@ -782,15 +774,56 @@ if bAPIError then
     term.setCursorPos( 1,1 )
 end
 
+-- Set default settings
+settings.set( "shell.allow_startup", true )
+settings.set( "shell.allow_disk_startup", (commands == nil) )
+settings.set( "shell.autocomplete", true )
+settings.set( "edit.autocomplete", true )
+settings.set( "lua.autocomplete", true )
+if term.isColour() then
+    settings.set( "bios.use_multishell", true )
+end
+if _CC_DEFAULT_SETTINGS then
+    for sPair in string.gmatch( _CC_DEFAULT_SETTINGS, "[^,]+" ) do
+        local sName, sValue = string.match( sPair, "([^=]*)=(.*)" )
+        if sName and sValue then
+            local value
+            if sValue == "true" then
+                value = true
+            elseif sValue == "false" then
+                value = false
+            elseif sValue == "nil" then
+                value = nil
+            elseif tonumber(sValue) then
+                value = tonumber(sValue)
+            else
+                value = sValue
+            end
+            if value then
+                settings.set( sName, value )
+            else
+                settings.unset( sName )
+            end
+        end
+    end
+end
+
+-- Load user settings
+if fs.exists( ".settings" ) then
+    settings.load( ".settings" )
+end
+
 -- Run the shell
 local ok, err = pcall( function()
     parallel.waitForAny( 
         function()
-            if term.isColour() then
-                os.run( {}, "rom/programs/advanced/multishell" )
+            local sShell
+            if term.isColour() and settings.get( "bios.use_multishell" ) then
+                sShell = "rom/programs/advanced/multishell"
             else
-                os.run( {}, "rom/programs/shell" )
+                sShell = "rom/programs/shell"
             end
+            os.run( {}, sShell )
             os.run( {}, "rom/programs/shutdown" )
         end,
         function()

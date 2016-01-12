@@ -106,7 +106,7 @@ if parentTerm.isColor() then
     menuOtherTextColor, menuOtherBgColor = colors.black, colors.gray
 else
     menuMainTextColor, menuMainBgColor = colors.white, colors.black
-    menuOtherTextColor, menuOtherBgColor = colors.black, colors.white
+    menuOtherTextColor, menuOtherBgColor = colors.black, colors.gray
 end
 
 local function redrawMenu()

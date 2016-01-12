@@ -166,13 +166,15 @@ local nCompletion
 
 local tCompleteEnv = _ENV
 local function complete( sLine )
-    local nStartPos = string.find( sLine, "[a-zA-Z0-9_%.]+$" )
-    if nStartPos then
-        sLine = string.sub( sLine, nStartPos )
-    end
-    if #sLine > 0 then
-        return textutils.complete( sLine, tCompleteEnv )
-    end
+	if settings.get( "edit.autocomplete" ) then
+	    local nStartPos = string.find( sLine, "[a-zA-Z0-9_%.]+$" )
+	    if nStartPos then
+	        sLine = string.sub( sLine, nStartPos )
+	    end
+	    if #sLine > 0 then
+	        return textutils.complete( sLine, tCompleteEnv )
+	    end
+	end
     return nil
 end
 
@@ -452,26 +454,10 @@ redrawMenu()
 
 local function acceptCompletion()
     if nCompletion then
-        -- Find the common prefix of all the other suggestions which start with the same letter as the current one
+        -- Append the completion
         local sCompletion = tCompletions[ nCompletion ]
-        local sFirstLetter = string.sub( sCompletion, 1, 1 )
-        local sCommonPrefix = sCompletion
-        for n=1,#tCompletions do
-            local sResult = tCompletions[n]
-            if n ~= nCompletion and string.find( sResult, sFirstLetter, 1, true ) == 1 then
-                while #sCommonPrefix > 1 do
-                    if string.find( sResult, sCommonPrefix, 1, true ) == 1 then
-                        break
-                    else
-                        sCommonPrefix = string.sub( sCommonPrefix, 1, #sCommonPrefix - 1 )
-                    end
-                end
-            end
-        end
-
-        -- Append this string
-        tLines[y] = tLines[y] .. sCommonPrefix
-        setCursor( x + string.len( sCommonPrefix ), y )
+        tLines[y] = tLines[y] .. sCompletion
+        setCursor( x + string.len( sCompletion ), y )
     end
 end
 

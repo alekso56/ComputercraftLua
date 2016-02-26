@@ -80,7 +80,11 @@ function pagedPrint( _sText, _nFreeLines )
     -- Print the text
     local result
     local ok, err = pcall( function()
-        result = print( _sText )
+        if _sText ~= nil then
+            result = print( _sText )
+        else
+            result = print()
+        end
     end )
 
     -- Removed the redirector

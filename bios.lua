@@ -1,7 +1,7 @@
 
 local nativegetfenv = getfenv
 if _VERSION == "Lua 5.1" then
-    -- Install parts of the Lua 5.2 API so that programs can be written against it now
+    -- If we're on Lua 5.1, install parts of the Lua 5.2/5.3 API so that programs can be written against it
     local nativeload = load
     local nativeloadstring = loadstring
     local nativesetfenv = setfenv
@@ -43,6 +43,7 @@ if _VERSION == "Lua 5.1" then
     table.unpack = unpack
     table.pack = function( ... ) return { ... } end
 
+    -- Install the bit32 api
     local nativebit = bit
     bit32 = {}
     bit32.arshift = nativebit.brshift
@@ -67,8 +68,72 @@ if _VERSION == "Lua 5.1" then
     end
 end
 
--- Install fix for luaj's broken string.sub/string.find
-do
+if _VERSION == "Lua 5.3" then
+    -- If we're on Lua 5.3, install the bit32 api
+    -- (Loaded from a string so this file will still parse on <5.3 lua)
+    load( [[
+        bit32 = {}
+
+        function bit32.arshift( n, bits )
+            if type(n) ~= "number" or type(bits) ~= "number" then
+                error( "Expected number, number", 2 )
+            end
+            return n >> bits
+        end
+
+        function bit32.band( m, n )
+            if type(m) ~= "number" or type(n) ~= "number" then
+                error( "Expected number, number", 2 )
+            end
+            return m & n
+        end
+
+        function bit32.bnot( n )
+            if type(n) ~= "number" then
+                error( "Expected number", 2 )
+            end
+            return ~n
+        end
+
+        function bit32.bor( m, n )
+            if type(m) ~= "number" or type(n) ~= "number" then
+                error( "Expected number, number", 2 )
+            end
+            return m | n
+        end
+
+        function bit32.btest( m, n )
+            if type(m) ~= "number" or type(n) ~= "number" then
+                error( "Expected number, number", 2 )
+            end
+            return (m & n) ~= 0
+        end
+
+        function bit32.bxor( m, n )
+            if type(m) ~= "number" or type(n) ~= "number" then
+                error( "Expected number, number", 2 )
+            end
+            return m ~ n
+        end
+
+        function bit32.lshift( n, bits )
+            if type(n) ~= "number" or type(bits) ~= "number" then
+                error( "Expected number, number", 2 )
+            end
+            return n << bits
+        end
+
+        function bit32.rshift( n, bits )
+            if type(n) ~= "number" or type(bits) ~= "number" then
+                error( "Expected number, number", 2 )
+            end
+            return n >> bits
+        end
+    ]] )()
+end
+
+if string.find( _HOST, "ComputerCraft" ) == 1 then
+    -- Install fix for LuaJ's broken string.sub/string.find
     local nativestringfind = string.find
     local nativestringsub = string.sub
     local nativepcall = pcall
@@ -91,10 +156,8 @@ do
         return nativestringfind( s .. "", ... );
     end
     string = stringCopy
-end
 
--- Prevent access to metatables or environments of strings, as these are global between all computers
-do
+    -- Prevent access to metatables or environments of strings, as these are global between all computers
     local nativegetmetatable = getmetatable
     local nativeerror = error
     local nativetype = type
@@ -500,15 +563,13 @@ loadfile = function( _sFile, _tEnv )
     return nil, "File not found"
 end
 
-if _VERSION == "Lua 5.1" and not _CC_DISABLE_LUA51_FEATURES then
-    dofile = function( _sFile )
-        local fnFile, e = loadfile( _sFile )
-        if fnFile then
-            setfenv( fnFile, getfenv(2) )
-            return fnFile()
-        else
-            error( e, 2 )
-        end
+dofile = function( _sFile )
+    local fnFile, e
+    loadfile( _sFile, _G )
+    if fnFile then
+        return fnFile()
+    else
+        error( e, 2 )
     end
 end
 
@@ -800,7 +861,7 @@ if _CC_DEFAULT_SETTINGS then
             else
                 value = sValue
             end
-            if value then
+            if value ~= nil then
                 settings.set( sName, value )
             else
                 settings.unset( sName )

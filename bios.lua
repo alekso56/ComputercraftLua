@@ -41,7 +41,7 @@ if _VERSION == "Lua 5.1" then
         end        
     end
     table.unpack = unpack
-    table.pack = function( ... ) return { ... } end
+    table.pack = function( ... ) return { n = select( "#", ... ), ... } end
 
     -- Install the bit32 api
     local nativebit = bit
@@ -69,7 +69,7 @@ if _VERSION == "Lua 5.1" then
 end
 
 if _VERSION == "Lua 5.3" then
-    -- If we're on Lua 5.3, install the bit32 api
+    -- If we're on Lua 5.3, install the bit32 api from Lua 5.2
     -- (Loaded from a string so this file will still parse on <5.3 lua)
     load( [[
         bit32 = {}

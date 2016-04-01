@@ -133,30 +133,6 @@ if _VERSION == "Lua 5.3" then
 end
 
 if string.find( _HOST, "ComputerCraft" ) == 1 then
-    -- Install fix for LuaJ's broken string.sub/string.find
-    local nativestringfind = string.find
-    local nativestringsub = string.sub
-    local nativepcall = pcall
-    local stringCopy = {}
-    for k,v in pairs(string) do
-        stringCopy[k] = v
-    end
-    stringCopy.sub = function( s, start, _end )
-        local ok, r = nativepcall( nativestringsub, s, start, _end )
-        if ok then
-            if r then
-                return r .. ""
-            end
-            return nil
-        else
-            error( r, 2 )
-        end
-    end
-    stringCopy.find = function( s, ... )
-        return nativestringfind( s .. "", ... );
-    end
-    string = stringCopy
-
     -- Prevent access to metatables or environments of strings, as these are global between all computers
     local nativegetmetatable = getmetatable
     local nativeerror = error
@@ -564,8 +540,7 @@ loadfile = function( _sFile, _tEnv )
 end
 
 dofile = function( _sFile )
-    local fnFile, e
-    loadfile( _sFile, _G )
+    local fnFile, e = loadfile( _sFile, _G )
     if fnFile then
         return fnFile()
     else
